@@ -8,37 +8,47 @@ struct SingleLikeData{
     date: Int as uint64;
 }
 
+// Internal messages within other system contracts for communication
 
 message UserInternalAddLikeOrDislike {
     userId: Int as uint64;
     like: LikeValue;
+    owner: Address;
 }
 message UserInternalRemoveLikeOrDislike{
     userId: Int as uint64;
+    owner: Address;
 }
 
 // Internal messages
-message(0x1002) SetLikeInternal {
+message SetLikeInternal {
     value: LikeValue;
+    excessTo: Address;
 }
-message(0x1003) DeleteLikeInternal {}
-message(0x1005) PongSetLikeInternal {
+message DeleteLikeInternal {
+    excessTo: Address;
+}
+message PongSetLikeInternal {
     keySignature: Int as uint64;
     oldValue: LikeValue?;
     newValue: LikeValue;
+    excessTo: Address;
 }
-message(0x1006) PongDeleteLikeInternal {
+message PongDeleteLikeInternal {
     keySignature: Int as uint64;
     oldValue: LikeValue?;
+    excessTo: Address;
 }
 
 
 
+// Main trait for likeable objects (which can be liked).
+// Likes should be added from main user contract
 
-trait LikeableObject with LockableAction, ExcessableToUser, UserPerformable{
+trait LikeableObject with LockableAction, UserPerformable, Excessable{
     // from base traits
     master: Address;
-    lockableAction: map<Int as uint64, Bool>;
+    lockableAction: map<Int as uint64, Int as uint8>;
 
     //own variables
     likesCount: Int;
@@ -53,7 +63,7 @@ trait LikeableObject with LockableAction, ExcessableToUser, UserPerformable{
         //locking for each action, because they are done in async
         self.lock(m.userId);
         //set value
-        self.setValue(m.userId, m.like);
+        self.setValue(m.userId, m.like, m.owner);
     }
     receive(m: UserInternalRemoveLikeOrDislike){
         self.requireSenderIsUser(m.userId);
@@ -61,7 +71,7 @@ trait LikeableObject with LockableAction, ExcessableToUser, UserPerformable{
 
         //locking for each action, because they are done in async
         self.lock(m.userId);
-        self.deleteValue(m.userId);
+        self.deleteValue(m.userId, m.owner);
     }
     /// ---
     /// Public functions end
@@ -74,25 +84,26 @@ trait LikeableObject with LockableAction, ExcessableToUser, UserPerformable{
     // ---
 
     //send message to child element, to set value
-    fun setValue(key: Int, value: LikeValue){
+    fun setValue(key: Int, value: LikeValue, owner: Address){
         let b = initOf UserLike(myAddress(), key);
         send(SendParameters{
             value: 0,
             mode: SendRemainingValue,
             body: SetLikeInternal{
                 value: value,
+                excessTo: owner
             }.toCell(),
             to: contractAddress(b),
             data: b.data,
             code: b.code,
         });
     }
-    fun deleteValue(key: Int){
+    fun deleteValue(key: Int, owner: Address){
         let b = initOf UserLike(myAddress(), key);
             send(SendParameters{
                 value: 0,
                 mode: SendRemainingValue,
-                body: deleteInternalMessage(),
+                body: DeleteLikeInternal{excessTo: owner}.toCell(),
                 to: contractAddress(b),
                 data: b.data,
                 code: b.code,
@@ -101,11 +112,11 @@ trait LikeableObject with LockableAction, ExcessableToUser, UserPerformable{
 
     receive(m: PongDeleteLikeInternal){
         self.requireLikeSender(m.keySignature);
-        self.handleResponseRemoveLike(m.oldValue, m.keySignature);
+        self.handleResponseRemoveLike(m.oldValue, m.keySignature, m.excessTo);
     }
     receive(m: PongSetLikeInternal){
         self.requireLikeSender(m.keySignature);
-        self.handleResponseSetLike(m.oldValue, m.newValue, m.keySignature);
+        self.handleResponseSetLike(m.oldValue, m.newValue, m.keySignature, m.excessTo);
     }
     inline fun requireLikeSender(keySignature: Int){
         require(sender() == contractAddress(initOf UserLike(myAddress(), keySignature)), "Sender is not a child element");
@@ -121,7 +132,7 @@ trait LikeableObject with LockableAction, ExcessableToUser, UserPerformable{
     /// ----
 
     //handling like set
-    inline fun handleResponseSetLike(oldValue: LikeValue?, newValue: LikeValue, userId: Int){
+    inline fun handleResponseSetLike(oldValue: LikeValue?, newValue: LikeValue, userId: Int, userOwner: Address){
         self.unlock(userId);
         if(oldValue == null){
             if(newValue.isLike){
@@ -140,17 +151,17 @@ trait LikeableObject with LockableAction, ExcessableToUser, UserPerformable{
             self.dislikesCount -= 1;
         }
         else {
-            self.excessToUser(userId, "Error: already has like/dislike");
+            self.excess(userOwner, "Error: already has like/dislike");
             return;
         }
-        self.excessToUser(userId, newValue.isLike ? "Like added": "Dislike added");
+        self.excess(userOwner, newValue.isLike ? "Like added": "Dislike added");
     }
 
     //succesfully deleted like
-    inline fun handleResponseRemoveLike(oldValue: LikeValue?, userId: Int){
+    inline fun handleResponseRemoveLike(oldValue: LikeValue?, userId: Int, userOwner: Address){
         if(oldValue == null){
             self.unlock(userId);
-            self.excessToUser(userId, "Error: no like/dislike to remove");
+            self.excess(userOwner, "Error: no like/dislike to remove");
             return;
         }
         if(oldValue!!.isLike){
@@ -160,7 +171,7 @@ trait LikeableObject with LockableAction, ExcessableToUser, UserPerformable{
             self.dislikesCount -= 1;
         }
         self.unlock(userId);
-        self.excessToUser(userId, oldValue!!.isLike?"Like removed": "Dislike removed");
+        self.excess(userOwner, oldValue!!.isLike?"Like removed": "Dislike removed");
     }
 
 
@@ -199,6 +210,7 @@ contract UserLike{
                 keySignature: self.ownerUserId,
                 oldValue,
                 newValue: m.value,
+                excessTo: m.excessTo
             }.toCell(),
             SendRemainingValue
         );
@@ -211,7 +223,8 @@ contract UserLike{
         self.pong(
             PongDeleteLikeInternal{
                 keySignature: self.ownerUserId,
-                oldValue
+                oldValue,
+                excessTo: m.excessTo
             }.toCell(),
             SendRemainingBalance|SendDestroyIfZero
         );
@@ -237,8 +250,4 @@ contract UserLike{
             date: self.last_edit
         };
     }
-}
-
-inline fun deleteInternalMessage(): Cell{
-    return DeleteLikeInternal{}.toCell();
 }

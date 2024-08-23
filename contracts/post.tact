@@ -10,9 +10,10 @@ message SetPostDataMessage{
 }
 struct PostData{
     text: String?;
-    likesCount: Int;
-    dislikesCount: Int;
-    ownerUserId: Int;
+    likesCount: Int as uint32;
+    dislikesCount: Int as uint32;
+    ownerUserId: Int as uint64;
+    postId: Int as uint64;
     masterAddress: Address;
 }
 
@@ -26,7 +27,7 @@ contract UserPost with Deployable, LikeableObject, Excessable, UserOwnable {
     master: Address;
 
     //from likeable object
-    lockableAction: map<Int as uint64, Bool>;
+    lockableAction: map<Int as uint64, Int as uint8>;
     likesCount: Int as uint32;
     dislikesCount: Int as uint32;
 
@@ -51,6 +52,10 @@ contract UserPost with Deployable, LikeableObject, Excessable, UserOwnable {
             dislikesCount: self.dislikesCount,
             ownerUserId: self.ownerUserId,
             masterAddress: self.master,
+            postId: self.postId
         };
+    }
+    override inline fun getMasterAddress(): Address{
+        return self.master;
     }
 }

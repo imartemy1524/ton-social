@@ -1,9 +1,15 @@
-import { Blockchain, SandboxContract, TreasuryContract } from '@ton/sandbox';
-import User from '../wrappers/User';
-import Master from '../wrappers/Master';
+import {
+    Blockchain,
+    BlockchainTransaction,
+    printTransactionFees,
+    SandboxContract,
+    TreasuryContract,
+} from '@ton/sandbox';
+import { User } from '../wrappers/User';
+import { Master } from '../wrappers/Master';
 import { toNano } from '@ton/core';
 
-interface SocialMedia {
+export interface SocialMedia {
     blockchain: Blockchain;
     userWallets: SandboxContract<TreasuryContract>[];
     userAccounts: SandboxContract<User>[];
@@ -20,10 +26,24 @@ export async function deployMaster(): Promise<SocialMedia> {
     await master.send(masterOwner.getSender(), { value: toNano('0.2') }, { $$type: 'Deploy', queryId: 0n });
 
     let userAccounts: SandboxContract<User>[] = [];
-    for(const userWallet of userWallets) {
-        await master.send(userWallet.getSender(), { value: toNano('0.2') }, { $$type: 'Register',  });
+    for (const userWallet of userWallets) {
+        const { transactions } = await master.send(
+            userWallet.getSender(),
+            { value: toNano('1') },
+            { $$type: 'Register' },
+        );
+        const userId = await master.getUsersCount();
+        const user = blockchain.openContract(User.fromAddress(await master.getUser(userId)));
+        //@ts-ignore
+        expect(transactions as BlockchainTransaction[]).toHaveTransaction({
+            from: master.address,
+            to: user.address,
+            success: true,
+        });
+        expect(await user.getOwner()).toEqualAddress(userWallet.address);
+        userAccounts.push(user);
     }
-
 
     return { blockchain, userWallets, userAccounts, master, masterOwner, superMaster: master };
 }
+

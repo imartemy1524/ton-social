@@ -7,7 +7,7 @@ message(0x12345678) Register{
 
 }
 
-contract Master with OwnableTransferable, Deployable{
+contract Master with OwnableTransferable, Deployable, MasterUserBans{
     owner: Address;
     registerAmount: Int as coins;
     lastUserId: Int as uint64;
@@ -33,10 +33,15 @@ contract Master with OwnableTransferable, Deployable{
                 // we take the excess as comission
                 excessTo: self.owner
             }.toCell(),
-            to: contractAddress(user)
+            to: contractAddress(user),
+            code: user.code,
+            data: user.data
         });
     }
     get fun user(userId: Int): Address{
         return contractAddress(initOf User(myAddress(), userId));
+    }
+    get fun usersCount(): Int{
+        return self.lastUserId;
     }
 }

@@ -3,7 +3,6 @@ import "./abstract/blockable.tact";
 import "./abstract/masterable.tact";
 import "./user/post-communicator.tact";
 import "./post.tact";
-import "./user/excessable-to-user.tact";
 //system messages
 message InitUserInternal{
     owner: Address;
@@ -25,7 +24,7 @@ struct UserData{
 const NullAddress: Address = address("UQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJKZ");
 
 
-contract User with OwnableTransferable, Excessable, Blockable, PostCommunicator, ExcessableByUser{
+contract User with OwnableTransferable, Excessable, Blockable, PostCommunicator{
     //variables from traits
     blocked: Bool;
     master: Address;
@@ -62,5 +61,8 @@ contract User with OwnableTransferable, Excessable, Blockable, PostCommunicator,
 
     override inline fun getUserId(): Int{
         return self.userId;
+    }
+    override inline fun requireNotBlocked1(){
+        self.requireNotBlocked();
     }
 }
