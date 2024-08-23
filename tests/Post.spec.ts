@@ -35,10 +35,11 @@ async function createPost(
     const { lastPostId } = await account.getData();
     expect(lastPostId).toBe(prevPostsCount+1n);
     const post = blockchain.openContract(UserPost.fromAddress(await account.getPost(lastPostId)));
-    const { likesCount, dislikesCount, text } = await post.getData();
+    const { likesCount, dislikesCount, text , ownerUserId} = await post.getData();
     expect(text).toBe(textInitial);
     expect(likesCount).toBe(0n);
     expect(dislikesCount).toBe(0n);
+    expect(ownerUserId).toBe(await account.getData().then(e => e.userId));
     return post;
 }
 
@@ -98,11 +99,11 @@ describe('Post', () => {
         expect(lastPostId).toBe(10n);
     });
     it('should like', async () => {
-        const {userId: ownerUserId} = await data.userAccounts[0]!.getData();
+        const {userId: ownerUserId} = await data.userAccounts[5]!.getData();
         const post = await createPost(
             {
-                account: data.userAccounts[0]!,
-                wallet: data.userWallets[0]!,
+                account: data.userAccounts[5]!,
+                wallet: data.userWallets[5]!,
                 blockchain: data.blockchain,
             },
             { text: 'Hello, everybody, lets like/dislike this post!' },

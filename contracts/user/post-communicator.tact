@@ -18,7 +18,7 @@ message UserCreatePost{
 }
 
 //trait, that allows object to create posts, like it, change post text
-trait PostCommunicator with Ownable, Masterable{
+trait PostCommunicator with Ownable, Masterable, Blockable{
     virtual const MinPostFee: Int = ton("0.1");
     lastPostId: Int;
     owner: Address;
@@ -28,7 +28,7 @@ trait PostCommunicator with Ownable, Masterable{
     receive(m: UserCreatePost){
         self.requireOwner();
         self.requirePostFee();
-        self.requireNotBlocked1();
+        self.requireNotBlocked();
         self.lastPostId += 1;
         let post: StateInit = initOf UserPost(self.master, self.getUserId(), self.lastPostId);
         send(SendParameters{
@@ -43,7 +43,7 @@ trait PostCommunicator with Ownable, Masterable{
     receive(m: UserUpdateTextPost){
         self.requireOwner();
         self.requirePostFee();
-        self.requireNotBlocked1();
+        self.requireNotBlocked();
         require(self.lastPostId >= m.postId, "Post not found");
         let post: StateInit = initOf UserPost(self.master, self.getUserId(), m.postId);
         send(SendParameters{
@@ -56,7 +56,7 @@ trait PostCommunicator with Ownable, Masterable{
     receive(m: UserAddLikePost){
         self.requireOwner();
         self.requirePostFee();
-        self.requireNotBlocked1();
+        self.requireNotBlocked();
         let post: StateInit = initOf UserPost(self.master, m.ownerUserId, m.postId);
         send(SendParameters{
             to: contractAddress(post),
@@ -68,7 +68,7 @@ trait PostCommunicator with Ownable, Masterable{
     receive(m: UserRemoveLikePost){
         self.requireOwner();
         self.requirePostFee();
-        self.requireNotBlocked1();
+        self.requireNotBlocked();
         let post: StateInit = initOf UserPost(self.master, m.ownerUserId, m.postId);
         send(SendParameters{
             to: contractAddress(post),
@@ -81,8 +81,8 @@ trait PostCommunicator with Ownable, Masterable{
         });
     }
 
-    abstract fun requireNotBlocked1();
-    abstract fun getUserId(): Int;
+//    abstract fun requireNotBlocked1();
+//    abstract fun getUserId(): Int;
     get fun post(postId: Int): Address{
         let data: StateInit = initOf UserPost(self.master, self.getUserId(), postId);
         return contractAddress(data);

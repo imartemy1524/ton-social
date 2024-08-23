@@ -27,7 +27,10 @@ trait Blockable with Masterable, Excessable{
     inline fun requireNotBlocked(){
         require(!self.blocked, "Object blocked!");
     }
-    inline abstract fun getUserId(): Int;
+    inline virtual fun getUserId(): Int{
+        require(false, "Not implemented");
+        return 0;
+    }
 
 }
 

@@ -3,6 +3,7 @@ import "./abstract/blockable.tact";
 import "./abstract/masterable.tact";
 import "./user/post-communicator.tact";
 import "./post.tact";
+import "./user/comment-communicator.tact";
 //system messages
 message InitUserInternal{
     owner: Address;
@@ -24,7 +25,7 @@ struct UserData{
 const NullAddress: Address = address("UQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJKZ");
 
 
-contract User with OwnableTransferable, Excessable, Blockable, PostCommunicator{
+contract User with OwnableTransferable, Excessable, Blockable, PostCommunicator, CommentCommunicator{
     //variables from traits
     blocked: Bool;
     master: Address;
@@ -51,11 +52,11 @@ contract User with OwnableTransferable, Excessable, Blockable, PostCommunicator{
 
     get fun data(): UserData{
         return UserData {
-            master: self.master,
-            userId: self.userId,
-            owner: self.owner,
-            blocked: self.blocked,
-            lastPostId: self.lastPostId
+        master: self.master,
+        userId: self.userId,
+        owner: self.owner,
+        blocked: self.blocked,
+        lastPostId: self.lastPostId
         };
     }
 
