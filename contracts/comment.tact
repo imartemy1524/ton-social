@@ -1,54 +1,47 @@
-const COMMENT_TYPE_POST: Int = 1;
-const COMMENT_TYPE_COMMENT: Int = 2;
+import "./abstract/parentable.tact";
 
-struct CommentParentPostObjectType{
-    postId: Int as uint64;
-    userOwnerId: Int as uint64;
-}
-struct CommentParentCommentObjectType{
-    objectType: Int;
-    objectId: Cell;
-    commentId: Int;
-}
 
-contract Comment with CommentBase, Masterable{
+struct CommentData{
+    userId: Int as uint64;
+    text: String;
     date: Int as uint64;
     master: Address;
-    objectId: Cell;
-    objectType: Int as uint8;
-    text: String;
+    parent: Address;
+    childrenCount: Int as uint64;
+}
+
+contract Comment with CommentBase, Masterable, Parentable, LikeableObject, Commentable{
+    master: Address;
+    parent: Address;
+
+    //own variables
+    date: Int as uint64 = 0;
+    text: String = "";
     commentId: Int as uint64;
-    userOwnerId: Int as uint64;
-    lockableAction: map<Int as uint64, Int as uint8>;
-    likesCount: Int as uint32 = 0;
-    dislikesCount: Int as uint32 = 0;
 
+    ownerUserId: Int as uint64 = 0;
+    likes: map<Int as uint8, Int as int64>;
 
-    init(master: Address, objectType: Int, objectId: Cell, commentId: Int){
+    //from Commentable
+    commentsCount: Int as uint64 = 0;
+
+    init(master: Address, parent: Address, commentId: Int){
         self.master = master;
-        self.objectType = objectType;
-        self.objectId = objectId;
         self.commentId = commentId;
-        self.date = now();
-        self.userOwnerId = 0;
-        self.text = "";
+        self.parent = parent;
+    }
+    override inline fun getMasterAddress(): Address{
+        return self.master;
+    }
+    get fun data(): CommentData{
+        return CommentData{
+            userId: self.ownerUserId,
+            text: self.text,
+            date: self.date,
+            master: self.master,
+            parent: self.parent,
+            childrenCount: self.commentsCount,
+        };
     }
 
-
-    override inline fun getParentObjectAddress(): Address{
-        if(self.objectType == COMMENT_TYPE_POST){
-            let slice: CommentParentPostObjectType = CommentParentPostObjectType.fromCell(self.objectId);
-            let commentParentState = (initOf UserPost(self.master, slice.userOwnerId, slice.postId));
-            return contractAddress(commentParentState);
-        }
-        else if(self.objectType == COMMENT_TYPE_COMMENT){
-            let slice: CommentParentCommentObjectType = CommentParentCommentObjectType.fromCell(self.objectId);
-            let commentParentState = (initOf Comment(self.master, slice.objectType, slice.objectId, slice.commentId));
-            return contractAddress(commentParentState);
-        }
-        else{
-            require(false, "Unknown object type");
-            return NullAddress;
-        }
-    }
 }

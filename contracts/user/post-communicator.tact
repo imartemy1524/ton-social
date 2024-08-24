@@ -1,13 +1,3 @@
-//liking
-message UserAddLikePost{
-    postId: Int as uint64;
-    ownerUserId: Int as uint64;
-    isLike: LikeValue;
-}
-message UserRemoveLikePost{
-    postId: Int as uint64;
-    ownerUserId: Int as uint64;
-}
 //post messages
 message UserUpdateTextPost{
     postId: Int as uint64;
@@ -20,17 +10,18 @@ message UserCreatePost{
 //trait, that allows object to create posts, like it, change post text
 trait PostCommunicator with Ownable, Masterable, Blockable{
     virtual const MinPostFee: Int = ton("0.1");
-    lastPostId: Int;
+    postsCount: Int;
     owner: Address;
     master: Address;
     blocked: Bool;
+    userId: Int;
 
     receive(m: UserCreatePost){
         self.requireOwner();
         self.requirePostFee();
         self.requireNotBlocked();
-        self.lastPostId += 1;
-        let post: StateInit = initOf UserPost(self.master, self.getUserId(), self.lastPostId);
+        self.postsCount += 1;
+        let post: StateInit = initOf UserPost(self.master, self.userId, self.postsCount);
         send(SendParameters{
             to: contractAddress(post),
             value: 0,
@@ -44,8 +35,8 @@ trait PostCommunicator with Ownable, Masterable, Blockable{
         self.requireOwner();
         self.requirePostFee();
         self.requireNotBlocked();
-        require(self.lastPostId >= m.postId, "Post not found");
-        let post: StateInit = initOf UserPost(self.master, self.getUserId(), m.postId);
+        require(self.postsCount >= m.postId, "Post not found");
+        let post: StateInit = initOf UserPost(self.master, self.userId, m.postId);
         send(SendParameters{
             to: contractAddress(post),
             value: 0,
@@ -53,38 +44,9 @@ trait PostCommunicator with Ownable, Masterable, Blockable{
             body: SetPostDataMessage{text: m.text, excessTo: self.owner}.toCell()
         });
     }
-    receive(m: UserAddLikePost){
-        self.requireOwner();
-        self.requirePostFee();
-        self.requireNotBlocked();
-        let post: StateInit = initOf UserPost(self.master, m.ownerUserId, m.postId);
-        send(SendParameters{
-            to: contractAddress(post),
-            value: 0,
-            mode: SendRemainingValue,
-            body: UserInternalAddLikeOrDislike{like: m.isLike, userId: self.getUserId(), owner: self.owner}.toCell()
-        });
-    }
-    receive(m: UserRemoveLikePost){
-        self.requireOwner();
-        self.requirePostFee();
-        self.requireNotBlocked();
-        let post: StateInit = initOf UserPost(self.master, m.ownerUserId, m.postId);
-        send(SendParameters{
-            to: contractAddress(post),
-            value: 0,
-            mode: SendRemainingValue,
-            body: UserInternalRemoveLikeOrDislike{
-                userId: self.getUserId(),
-                owner: self.owner
-            }.toCell()
-        });
-    }
 
-//    abstract fun requireNotBlocked1();
-//    abstract fun getUserId(): Int;
     get fun post(postId: Int): Address{
-        let data: StateInit = initOf UserPost(self.master, self.getUserId(), postId);
+        let data: StateInit = initOf UserPost(self.master, self.userId, postId);
         return contractAddress(data);
     }
     inline fun requirePostFee(){

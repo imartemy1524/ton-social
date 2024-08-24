@@ -3,11 +3,9 @@ message AddCommentInternalObject {
     data: CommentCreateData;
 }
 
-trait CommentableObjectPost with UserPerformable, Masterable {
-    master: Address;
+//IMPORTANT!!!! Override virtual getMasterAddress() function from contract code!!!
+trait Commentable with UserPerformable {
     commentsCount: Int;
-    abstract const ObjectTypeId: Int;
-    abstract inline fun getObjectId(): Cell;
     receive(m: AddCommentInternalObject) {
         self.requireSenderIsUser(m.data.fromUserId);
 
@@ -18,16 +16,16 @@ trait CommentableObjectPost with UserPerformable, Masterable {
             value: 0,
             mode: SendRemainingValue,
             to: contractAddress(comment),
-            body: InternalCommentSetTextParent{data: m.data}.toCell(),
+            body: InternalInitializeComment{data: m.data}.toCell(),
             code: comment.code,
             data: comment.data
         });
 
     }
     inline fun getCommentAt(id: Int): StateInit{
-        return (initOf Comment(self.master, self.ObjectTypeId, self.getObjectId(), id))
+        return initOf Comment(self.getMasterAddress(), myAddress(), id);
     }
-    get fun comment(id: Int): Address{
+    get fun childComment(id: Int): Address{
         let state: StateInit = self.getCommentAt(id);
         return contractAddress(state);
     }

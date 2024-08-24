@@ -9,10 +9,9 @@ message BlockSuccess{
     userId: Int as uint64;
     value: Bool;
 }
-trait Blockable with Masterable, Excessable{
-    master: Address;
+trait BlockableByMaster with Blockable, Masterable{
     blocked: Bool;
-
+    master: Address;
     receive(m: BlockByMasterInternal){
         self.requireMaster();
         self.blocked = m.value;
@@ -23,15 +22,14 @@ trait Blockable with Masterable, Excessable{
             body: BlockSuccess{userId: self.getUserId(), value: m.value}.toCell()
         })
     }
+    inline abstract fun getUserId(): Int;
 
+}
+trait Blockable with Excessable{
+    blocked: Bool;
     inline fun requireNotBlocked(){
         require(!self.blocked, "Object blocked!");
     }
-    inline virtual fun getUserId(): Int{
-        require(false, "Not implemented");
-        return 0;
-    }
-
 }
 
 

@@ -6,7 +6,7 @@ trait UserPerformable{
     inline fun userContractAddress(userId: Int): Address{
         return contractAddress(initOf User(self.getMasterAddress(), userId));
     }
-    //TODO: need to be ABSTRACT, but multiple inheritance is not supported yet (WTAF?)
+    //TODO: need to be ABSTRACT, but multiple inheritance is not supported yet (WTF?)
     inline virtual fun getMasterAddress(): Address{
         return myAddress();
     }

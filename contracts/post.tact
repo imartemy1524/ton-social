@@ -5,37 +5,33 @@ import "./abstract/masterable.tact";
 import "./user/user-ownable.tact";
 import "./user/user-performable.tact";
 
-import "./comments/commentable-object-post.tact";
+import "./comments/commentable.tact";
 message SetPostDataMessage{
     text: String;
     excessTo: Address;
 }
-struct PostCreateData{
-    text: String;
-    excessTo: Address;
-}
 struct PostData{
-    text: String?;
-    likesCount: Int as uint32;
-    dislikesCount: Int as uint32;
-    ownerUserId: Int as uint64;
+    text: String;
+    likes: map<Int as uint8, Int as int64>;
     postId: Int as uint64;
-    masterAddress: Address;
+    ownerUserId: Int as uint64;
     commentsCount: Int as uint64;
+    master: Address;
 }
-contract UserPost with Deployable, LikeableObject, Excessable, UserOwnable, CommentableObjectPost {
+contract UserPost with LikeableObject, Excessable, Commentable, UserOwnable {
     //post variables
     postId: Int as uint64;
-    text: String?;
+    text: String = "";
+    date: Int as uint64 = 0;
+
+    master: Address;
 
     //from user ownable
     ownerUserId: Int as uint64;
-    master: Address;
 
     //from likeable object
-    lockableAction: map<Int as uint64, Int as uint8>;
-    likesCount: Int as uint32;
-    dislikesCount: Int as uint32;
+    likes: map<Int as uint8, Int as int64>;
+
     // from comments
     commentsCount: Int as uint64 = 0;
 
@@ -43,37 +39,28 @@ contract UserPost with Deployable, LikeableObject, Excessable, UserOwnable, Comm
     init(masterAddress: Address, ownerUserId: Int, postId: Int){
         self.ownerUserId = ownerUserId;
         self.postId = postId;
-        self.likesCount = 0;
-        self.dislikesCount = 0;
-        self.text = null;
         self.master = masterAddress;
     }
 
     override inline fun getMasterAddress(): Address{
         return self.master;
     }
-    override inline fun getObjectId(): Cell{
-        return CommentParentPostObjectType{
-            postId: self.postId,
-            userOwnerId: self.ownerUserId
-        }.toCell();
-    }
-    //TODO: COMMENT_TYPE_POST
-    override const ObjectTypeId: Int = 1;
 
     receive(m: SetPostDataMessage){
-        self.requireOwner(sender());
+        self.requireSenderIsUser(self.ownerUserId);
         self.text = m.text;
+        if(self.date == 0){
+            self.date = now();
+        }
         self.excess(m.excessTo, "ok");
     }
 
     get fun data(): PostData{
         return PostData{
             text: self.text,
-            likesCount: self.likesCount,
-            dislikesCount: self.dislikesCount,
+            likes: self.likes,
             ownerUserId: self.ownerUserId,
-            masterAddress: self.master,
+            master: self.master,
             postId: self.postId,
             commentsCount: self.commentsCount
         };

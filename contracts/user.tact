@@ -4,6 +4,7 @@ import "./abstract/masterable.tact";
 import "./user/post-communicator.tact";
 import "./post.tact";
 import "./user/comment-communicator.tact";
+import "./user/like-adder-communicator.tact";
 //system messages
 message InitUserInternal{
     owner: Address;
@@ -16,7 +17,7 @@ struct UserData{
     userId: Int as uint64;
     owner: Address;
     blocked: Bool;
-    lastPostId: Int as uint64;
+    postsCount: Int as uint64;
 }
 
 
@@ -25,11 +26,11 @@ struct UserData{
 const NullAddress: Address = address("UQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJKZ");
 
 
-contract User with OwnableTransferable, Excessable, Blockable, PostCommunicator, CommentCommunicator{
+contract User with OwnableTransferable, Excessable, BlockableByMaster, PostCommunicator, CommentCommunicator, LikeAdderCommunicator{
     //variables from traits
     blocked: Bool;
     master: Address;
-    lastPostId: Int as uint64;
+    postsCount: Int as uint64 = 0;
     registerDate: Int as uint64;
     //user owner address
     owner: Address;
@@ -40,7 +41,6 @@ contract User with OwnableTransferable, Excessable, Blockable, PostCommunicator,
         self.userId = userId;
         self.owner = NullAddress;
         self.blocked = false;
-        self.lastPostId = 0;
         self.registerDate = 0;
     }
     receive(m: InitUserInternal){
@@ -52,18 +52,16 @@ contract User with OwnableTransferable, Excessable, Blockable, PostCommunicator,
 
     get fun data(): UserData{
         return UserData {
-        master: self.master,
-        userId: self.userId,
-        owner: self.owner,
-        blocked: self.blocked,
-        lastPostId: self.lastPostId
+            master: self.master,
+            userId: self.userId,
+            owner: self.owner,
+            blocked: self.blocked,
+            postsCount: self.postsCount
         };
     }
 
     override inline fun getUserId(): Int{
         return self.userId;
     }
-    override inline fun requireNotBlocked1(){
-        self.requireNotBlocked();
-    }
+
 }

@@ -1,23 +1,14 @@
 // Public structs
 struct LikeValue{
     //islike = true - like, false - dislike
-    isLike: Bool;
+    // char=0, char=1 - like, char=2 - dislike
+    char: Int as uint8;
 }
 struct SingleLikeData{
-    likeValue: LikeValue?;
+    likeValue: LikeValue;
     date: Int as uint64;
-}
-
-// Internal messages within other system contracts for communication
-
-message UserInternalAddLikeOrDislike {
+    to: Address;
     userId: Int as uint64;
-    like: LikeValue;
-    owner: Address;
-}
-message UserInternalRemoveLikeOrDislike{
-    userId: Int as uint64;
-    owner: Address;
 }
 
 // Internal messages
@@ -25,229 +16,115 @@ message SetLikeInternal {
     value: LikeValue;
     excessTo: Address;
 }
-message DeleteLikeInternal {
-    excessTo: Address;
-}
-message PongSetLikeInternal {
-    keySignature: Int as uint64;
-    oldValue: LikeValue?;
+
+message SetLikeInternalNotification {
+    userId: Int as uint64;
+    oldValue: LikeValue;
     newValue: LikeValue;
     excessTo: Address;
 }
-message PongDeleteLikeInternal {
-    keySignature: Int as uint64;
-    oldValue: LikeValue?;
+message SetLikeSuccess{
     excessTo: Address;
+    newValue: LikeValue;
 }
 
 
 
 // Main trait for likeable objects (which can be liked).
-// Likes should be added from main user contract
+// Likes should be added from main user contract, which DEPLOYS UserLike contracts for each user.
 
-trait LikeableObject with LockableAction, UserPerformable, Excessable{
-    // from base traits
-    master: Address;
-    lockableAction: map<Int as uint64, Int as uint8>;
-
-    //own variables
-    likesCount: Int;
-    dislikesCount: Int;
+trait LikeableObject with Excessable{
+    // liketype -> count
+    likes: map<Int as uint8, Int as int64>;
 
     /// ---
     /// Public functions
     /// ---
-    receive(m: UserInternalAddLikeOrDislike){
-        self.requireSenderIsUser(m.userId);
-        self.requireNotLocked(m.userId);
-        //locking for each action, because they are done in async
-        self.lock(m.userId);
-        //set value
-        self.setValue(m.userId, m.like, m.owner);
-    }
-    receive(m: UserInternalRemoveLikeOrDislike){
-        self.requireSenderIsUser(m.userId);
-        self.requireNotLocked(m.userId);
-
-        //locking for each action, because they are done in async
-        self.lock(m.userId);
-        self.deleteValue(m.userId, m.owner);
-    }
-    /// ---
-    /// Public functions end
-    /// ---
-
-
-
-    /// ---
-    /// Working with async map
-    // ---
-
-    //send message to child element, to set value
-    fun setValue(key: Int, value: LikeValue, owner: Address){
-        let b = initOf UserLike(myAddress(), key);
-        send(SendParameters{
-            value: 0,
-            mode: SendRemainingValue,
-            body: SetLikeInternal{
-                value: value,
-                excessTo: owner
-            }.toCell(),
-            to: contractAddress(b),
-            data: b.data,
-            code: b.code,
-        });
-    }
-    fun deleteValue(key: Int, owner: Address){
-        let b = initOf UserLike(myAddress(), key);
-            send(SendParameters{
-                value: 0,
-                mode: SendRemainingValue,
-                body: DeleteLikeInternal{excessTo: owner}.toCell(),
-                to: contractAddress(b),
-                data: b.data,
-                code: b.code,
-            });
-    }
-
-    receive(m: PongDeleteLikeInternal){
-        self.requireLikeSender(m.keySignature);
-        self.handleResponseRemoveLike(m.oldValue, m.keySignature, m.excessTo);
-    }
-    receive(m: PongSetLikeInternal){
-        self.requireLikeSender(m.keySignature);
-        self.handleResponseSetLike(m.oldValue, m.newValue, m.keySignature, m.excessTo);
+    receive(m: SetLikeInternalNotification){
+        self.requireLikeSender(m.userId);
+        if(m.oldValue.char != 0){
+            self.likes.set(m.oldValue.char, self.likes.get(m.oldValue.char)!!-1);
+        }
+        if(m.newValue.char != 0){
+            let oldValue: Int? = self.likes.get(m.newValue.char) ;
+            self.likes.set(m.newValue.char, (oldValue == null ? 0 : oldValue!!)+1);
+        }
+        self.reply(SetLikeSuccess{
+            excessTo: m.excessTo,
+            newValue: m.newValue
+        }.toCell());
     }
     inline fun requireLikeSender(keySignature: Int){
-        require(sender() == contractAddress(initOf UserLike(myAddress(), keySignature)), "Sender is not a child element");
+        require(sender() == contractAddress(initOf UserLike(self.getMasterAddress(), myAddress(), keySignature)), "Sender is not a child element");
     }
 
-    get fun user_like(userId: Int): Address{
-        let data: StateInit = initOf UserLike(myAddress(), userId);
+    get fun like(userId: Int): Address{
+        let data: StateInit = initOf UserLike(self.getMasterAddress(), myAddress(), userId);
         return contractAddress(data);
     }
-
-    /// ----
-    /// Handlers
-    /// ----
-
-    //handling like set
-    inline fun handleResponseSetLike(oldValue: LikeValue?, newValue: LikeValue, userId: Int, userOwner: Address){
-        self.unlock(userId);
-        if(oldValue == null){
-            if(newValue.isLike){
-                self.likesCount += 1;
-            }
-            else{
-                self.dislikesCount += 1;
-            }
-        }
-        else if(oldValue!!.isLike && !newValue.isLike){
-            self.likesCount -= 1;
-            self.dislikesCount += 1;
-        }
-        else if(!oldValue!!.isLike && newValue.isLike){
-            self.likesCount += 1;
-            self.dislikesCount -= 1;
-        }
-        else {
-            self.excess(userOwner, "Error: already has like/dislike");
-            return;
-        }
-        self.excess(userOwner, newValue.isLike ? "Like added": "Dislike added");
+    virtual inline fun getMasterAddress(): Address{
+        require(false, "Not implemented");
+        return NullAddress;
     }
-
-    //succesfully deleted like
-    inline fun handleResponseRemoveLike(oldValue: LikeValue?, userId: Int, userOwner: Address){
-        if(oldValue == null){
-            self.unlock(userId);
-            self.excess(userOwner, "Error: no like/dislike to remove");
-            return;
-        }
-        if(oldValue!!.isLike){
-            self.likesCount -= 1;
-        }
-        else {
-            self.dislikesCount -= 1;
-        }
-        self.unlock(userId);
-        self.excess(userOwner, oldValue!!.isLike?"Like removed": "Dislike removed");
-    }
-
-
-    /// ----
-    /// Handlers end
-    /// ----
-
-    /// ---
-    /// Working with async map end
-    /// ---
-
 
 }
 
 
-contract UserLike{
-    ownerUserId: Int as uint64;
-    value: LikeValue?;
-    // local master - Likeable object
+contract UserLike with Blockable, UserOwnable{
+    //block object to prevent double messages
+    blocked: Bool = false;
     master: Address;
-    last_edit: Int as uint64;
-    init(master: Address, owner: Int){
-        self.master = master;
+    ownerUserId: Int as uint64;
+    value: LikeValue;
+    // local master - Likeable object
+    toObject: Address;
+    lastEdit: Int as uint64 = 0;
+    init(master: Address, toObject: Address, owner: Int){
+        self.toObject = toObject;
         self.ownerUserId = owner;
-        self.value = null;
-        self.last_edit = 0;
+        self.value = LikeValue{char: 0};
+        self.master = master;
     }
 
     receive(m: SetLikeInternal){
-        self.requireMaster();
-        let oldValue: LikeValue? = self.value;
-        self.value = m.value;
-        self.last_edit = now();
-        self.pong(
-            PongSetLikeInternal{
-                keySignature: self.ownerUserId,
-                oldValue,
+        self.requireOwner();
+        self.requireNotBlocked();
+        require(self.value.char != m.value.char, "You can't like twice");
+        self.blocked = true;
+        send(SendParameters{
+            value: 0,
+            mode: SendRemainingValue,
+            body: SetLikeInternalNotification{
+                userId: self.ownerUserId,
+                oldValue: self.value,
                 newValue: m.value,
                 excessTo: m.excessTo
             }.toCell(),
-            SendRemainingValue
-        );
-
-    }
-    receive(m: DeleteLikeInternal){
-        self.requireMaster();
-        let oldValue: LikeValue? = self.value;
-        self.value = null;
-        self.pong(
-            PongDeleteLikeInternal{
-                keySignature: self.ownerUserId,
-                oldValue,
-                excessTo: m.excessTo
-            }.toCell(),
-            SendRemainingBalance|SendDestroyIfZero
-        );
-    }
-
-    fun requireMaster(){
-        require(sender() == self.master, "Only master can call this function");
-    }
-
-    fun pong(m: Cell, mode: Int){
-        send(SendParameters{
-            value: 0,
-            mode,
-            body: m,
-            to: self.master
+            to: self.toObject
         });
     }
+    receive(m: SetLikeSuccess){
+        self.requireFromObject();
+        self.value = m.newValue;
+        self.blocked = false;
+        self.lastEdit = now();
+        self.excess(m.excessTo, "ok");
+    }
+    bounced(m: bounced<SetLikeInternalNotification>){
+        //Very sad, you're baka, the contract doesn't exists, or you've passed invalid address, or contract doesn't accept likes.
+        //But if it would exists in future - we should unblock actions
+        self.blocked = false;
+    }
 
-
+    inline fun requireFromObject(){
+        require(sender() == self.toObject, "Only object can call this callback function");
+    }
     get fun value(): SingleLikeData{
         return SingleLikeData{
             likeValue: self.value,
-            date: self.last_edit
+            date: self.lastEdit,
+            to: self.toObject,
+            userId: self.ownerUserId
         };
     }
 }

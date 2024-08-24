@@ -1,11 +1,10 @@
 
 
 
-trait UserOwnable with Masterable{
-    master: Address;
+//IMPORTANT!!! Override getMasterAddress function in parent contract!
+trait UserOwnable with UserPerformable{
     ownerUserId: Int;
-
-    inline fun requireOwner(_sender: Address){
-        require(_sender == contractAddress(initOf User(self.master, self.ownerUserId)), "Not a user");
+    inline fun requireOwner(){
+        self.requireSenderIsUser(self.ownerUserId);
     }
 }
