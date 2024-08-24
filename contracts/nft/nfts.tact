@@ -7,19 +7,22 @@ struct OnChainData{
 }
 // builds and returns cell of onchain NFT content, generated dynamically
 // Reference: https://github.com/ton-blockchain/TEPs/blob/master/text/0064-token-data-standard.md
-inline fun buildData(content: map<Int, String>): Cell{
+inline fun buildData(content: map<Int, Cell>): Cell{
     let ans: map<Int, Cell> = emptyMap();
-    foreach(key,value in content){
+    foreach(key, value in content){
         //
         ans.set(key, beginCell().storeUint(0x01, 8).storeSlice(value.asSlice()).endCell());
     }
     return OnChainData{
         byte: 0,
-        data: ans.asCell()
+        data: ans.asCell()!!
     }.toCell();
 }
 
 trait NftAble with Masterable, Ownable, IUser, Blockable{
+    blocked: Bool;
+    userId: Int;
+    nickname: String?;
     master: Address;
     owner: Address;
     avatar: String?;
@@ -79,14 +82,13 @@ trait NftAble with Masterable, Ownable, IUser, Blockable{
     // getter
     get fun get_nft_data(index: Int): GetNftData {
         return GetNftData{
-            is_initialized: self.owner != null,
+            is_initialized: self.owner != NullAddress,
             index: self.userId,
             collection_address: self.master,
             owner_address: self.owner,
             individual_content: IndividualContent{
-                userId: self.userId,
                 avatar: self.avatar,
-                nickname: self.nickname
+                nickname: self.userNickname()
             }.toCell()
         };
     }
@@ -101,17 +103,20 @@ trait NftCollection with Ownable, UserPerformable{
     abstract const CollectionDescription: String;
     abstract const LogoURL: String;
     abstract const MartketplaceURL: String;
+    abstract const DefaultUserAvatar: String;
     abstract inline fun getRoyaltyAddress(): Address;
     lastUserId: Int;
     //percents * 100 (1234 = 12.34%)
     royaltyNumberator: Int;
+    owner: Address;
 
     get fun get_collection_data(): CollectionData {
-        let data: map<Int, String> = emptyMap();
-        data.set(sha256("name"), self.CollectionName);
-        data.set(sha256("description"), self.CollectionDescription);
-        data.set(sha256("image"), self.LogoURL);
-        data.set(sha256("marketplace"), self.MartketplaceURL);
+        //TODO: fix asSlice and then asCell...
+        let data: map<Int, Cell> = emptyMap();
+        data.set(sha256("name"), self.CollectionName.asSlice().asCell());
+        data.set(sha256("description"), self.CollectionDescription.asSlice().asCell());
+        data.set(sha256("image"), self.LogoURL.asSlice().asCell());
+        data.set(sha256("marketplace"), self.MartketplaceURL.asSlice().asCell());
         return CollectionData{
             next_item_index: self.lastUserId,
             collection_content: buildData(data),
@@ -120,10 +125,10 @@ trait NftCollection with Ownable, UserPerformable{
     }
     get fun get_nft_content(index: Int, individual_content: Cell): Cell {
         let content: IndividualContent = IndividualContent.fromCell(individual_content);
-        let data: map<Int, String> = emptyMap();
-        data.set(sha256("name"), beginString().concat("User ").concat(content.nickname).toString());
-        data.set(sha256("image"), content.avatar);
-        data.set(sha256("description"), beginString().concat("Unique user \"").concat(content.nickname).concat("\" in NetoTON social network"));
+        let data: map<Int, Cell> = emptyMap();
+        data.set(sha256("name"), beginString().concat("User ").concat(content.nickname).toCell());
+        data.set(sha256("image"), (content.avatar != null) ? content.avatar!!.asSlice().asCell() : self.DefaultUserAvatar.asSlice().asCell());
+        data.set(sha256("description"), beginString().concat("Unique user \"").concat(content.nickname).concat("\" in NetoTON social network").toSlice().asCell());
 
         return buildData(data);
     }

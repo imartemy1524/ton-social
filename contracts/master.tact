@@ -4,11 +4,17 @@ import "./nft/nfts.tact";
 message ChangeRegisterAmount{
     amount: Int as coins;
 }
-message(0x12345678) Register{
+message(0x12345678) Register{}
 
-}
+contract Master with OwnableTransferable, Deployable, MasterUserBans, NftCollection{
+    override const CollectionName: String = "NetoTon users";
+    override const CollectionDescription: String = "Users on NetoTon blockchain, each represented by a unique NFT";
+    override const LogoURL: String = "https://i.imgur.com/P8tmkRB.png";
+    override const MartketplaceURL: String = "getgems.io";
+    override const DefaultUserAvatar: String = "https://clck.ru/3Cpgs9";
 
-contract Master with OwnableTransferable, Deployable, MasterUserBans{
+    //10%
+    royaltyNumberator: Int as uint16 = 10_00;
     owner: Address;
     registerAmount: Int as coins;
     lastUserId: Int as uint64;
@@ -27,16 +33,16 @@ contract Master with OwnableTransferable, Deployable, MasterUserBans{
         self.lastUserId += 1;
         let user = initOf User(myAddress(), self.lastUserId);
         send(SendParameters{
-            value: 0,
-            mode: SendRemainingValue,
-            body: InitUserInternal{
-                owner: sender(),
-                // we take the excess as comission
-                excessTo: self.owner
-            }.toCell(),
-            to: contractAddress(user),
-            code: user.code,
-            data: user.data
+        value: 0,
+        mode: SendRemainingValue,
+        body: InitUserInternal{
+        owner: sender(),
+        // we take the excess as comission
+        excessTo: self.owner
+        }.toCell(),
+        to: contractAddress(user),
+        code: user.code,
+        data: user.data
         });
     }
     get fun user(userId: Int): Address{
@@ -45,4 +51,10 @@ contract Master with OwnableTransferable, Deployable, MasterUserBans{
     get fun usersCount(): Int{
         return self.lastUserId;
     }
+
+    //TODO: set to profit address
+    override inline fun getRoyaltyAddress(): Address{
+        return self.owner;
+    }
+
 }

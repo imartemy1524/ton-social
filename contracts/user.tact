@@ -5,6 +5,7 @@ import "./user/post-communicator.tact";
 import "./post.tact";
 import "./user/comment-communicator.tact";
 import "./user/like-adder-communicator.tact";
+import "./user/iuser.tact";
 //system messages
 message InitUserInternal{
     owner: Address;
@@ -29,6 +30,10 @@ const NullAddress: Address = address("UQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 contract User with OwnableTransferable, Excessable, BlockableByMaster, PostCommunicator, CommentCommunicator, LikeAdderCommunicator, IUser{
     override const MinStorageFee: Int = ton("0.04");
     override const ComputeFee: Int = ton("0.013");
+
+
+    nickname: String? = null;
+    avatar: String? = null;
     //variables from traits
     blocked: Bool;
     master: Address;

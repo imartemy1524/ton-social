@@ -6,6 +6,6 @@ trait IUser{
 
     inline fun userNickname(): String{
         if(self.nickname != null){return self.nickname!!;}
-        return beginString().concat("id").concat(self.userId.toString());
+        return beginString().concat("id").concat(self.userId.toString()).toString();
     }
 }

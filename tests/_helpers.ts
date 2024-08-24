@@ -32,6 +32,7 @@ export async function deployMaster(): Promise<SocialMedia> {
             { value: toNano('1') },
             { $$type: 'Register' },
         );
+        // printTransactionFees(transactions);
         const userId = await master.getUsersCount();
         const user = blockchain.openContract(User.fromAddress(await master.getUser(userId)));
         //@ts-ignore
