@@ -1,11 +1,12 @@
 import { Blockchain, printTransactionFees, SandboxContract, TreasuryContract } from '@ton/sandbox';
-import { toNano } from '@ton/core';
+import { Address, fromNano, toNano } from '@ton/core';
 import '@ton/test-utils';
 import { UserPost } from '../wrappers/UserPost';
-import { deployMaster, SocialMedia } from './_helpers';
 import { User } from '../build/Master/tact_User';
 import { UserLike } from '../wrappers/UserLike';
-
+import { Comment } from '../build/Master/tact_Comment';
+import { SocialMedia, deployMaster } from './_helpers';
+type Tree = {value: Address, children: Tree[]};
 async function createPost(
     {
         account,
@@ -18,7 +19,7 @@ async function createPost(
     },
     { text: textInitial }: { text: string },
 ) {
-    const {lastPostId: prevPostsCount} = await account.getData();
+    const { postsCount: prevPostsCount } = await account.getData();
     const { transactions } = await account.send(
         wallet.getSender(),
         { value: toNano('0.1') },
@@ -32,14 +33,13 @@ async function createPost(
         to: account.address,
         success: true,
     });
-    const { lastPostId } = await account.getData();
-    expect(lastPostId).toBe(prevPostsCount+1n);
-    const post = blockchain.openContract(UserPost.fromAddress(await account.getPost(lastPostId)));
-    const { likesCount, dislikesCount, text , ownerUserId} = await post.getData();
+    const { postsCount } = await account.getData();
+    expect(postsCount).toBe(prevPostsCount + 1n);
+    const post = blockchain.openContract(UserPost.fromAddress(await account.getPost(postsCount)));
+    const { likes, text, ownerUserId } = await post.getData();
     expect(text).toBe(textInitial);
-    expect(likesCount).toBe(0n);
-    expect(dislikesCount).toBe(0n);
-    expect(ownerUserId).toBe(await account.getData().then(e => e.userId));
+    expect(likes.size).toBe(0);
+    expect(ownerUserId).toBe(await account.getData().then((e) => e.userId));
     return post;
 }
 
@@ -95,11 +95,11 @@ describe('Post', () => {
                 { text },
             );
         }
-        const { lastPostId } = await data.userAccounts[0]!.getData();
-        expect(lastPostId).toBe(10n);
+        const { postsCount } = await data.userAccounts[0]!.getData();
+        expect(postsCount).toBe(10n);
     });
     it('should like', async () => {
-        const {userId: ownerUserId} = await data.userAccounts[5]!.getData();
+        // const {userId: ownerUserId} = await data.userAccounts[5]!.getData();
         const post = await createPost(
             {
                 account: data.userAccounts[5]!,
@@ -108,70 +108,79 @@ describe('Post', () => {
             },
             { text: 'Hello, everybody, lets like/dislike this post!' },
         );
-        const {postId} = await post.getData();
+        const { postId } = await post.getData();
         // add 10 likes/dislikes (4 likes - 0,3,6,9, 6 dislikes - 1,2,4,5,7,8)
         for (let i = 0; i < 10; i++) {
-            const {transactions} = await data.userAccounts[i]!.send(
+            const { transactions } = await data.userAccounts[i]!.send(
                 data.userWallets[i]!.getSender(),
-                { value: toNano('0.1') },
+                { value: toNano('0.3') },
                 {
-                    $$type: 'UserAddLikePost',
-                    postId,
-                    ownerUserId,
+                    $$type: 'UserAddLike',
+                    to: post.address,
                     isLike: {
                         $$type: 'LikeValue',
-                        isLike: i % 3 === 0,
-                    }
+                        char: BigInt(i + 1),
+                    },
                 },
             );
         }
         //expect the post to have 4 likes and 6 dislikes
-        let { likesCount, dislikesCount } = await post.getData();
-        expect(likesCount).toBe(4n);
-        expect(dislikesCount).toBe(6n);
+        let { likes } = await post.getData();
+        expect(likes.size).toBe(10);
+        for (let i = 1; i < 11; i++) {
+            expect(likes.get(i)).toBe(1n);
+        }
 
         //now delete all likes and 3 dislikes
 
         for (let i = 0; i < 10; i++) {
-            if ([0, 3, 6, 9, 1, 2, 4].includes(i)) {
-                const { transactions } = await data.userAccounts[i]!.send(
-                    data.userWallets[i]!.getSender(),
-                    { value: toNano('0.1') },
-                    {
-                        $$type: 'UserRemoveLikePost',
-                        postId,
-                        ownerUserId,
+            const { transactions } = await data.userAccounts[i]!.send(
+                data.userWallets[i]!.getSender(),
+                { value: toNano('0.1') },
+                {
+                    $$type: 'UserAddLike',
+                    to: post.address,
+                    isLike: {
+                        $$type: 'LikeValue',
+                        char: BigInt([0, 3, 6, 9, 1, 2, 4].includes(i) ? 0 : 19),
                     },
-                );
-                expect(transactions).toHaveTransaction({
-                    from: data.userWallets[i]!.address,
-                    to: data.userAccounts[i]!.address,
-                    success: true,
-                });
-            }
+                },
+            );
+            expect(transactions).toHaveTransaction({
+                from: data.userWallets[i]!.address,
+                to: data.userAccounts[i]!.address,
+                success: true,
+            });
         }
 
         //expect the post to have 0 like and 3 dislikes
-        ({ likesCount, dislikesCount } = await post.getData());
-        expect(likesCount).toBe(0n);
-        expect(dislikesCount).toBe(3n);
+        ({ likes } = await post.getData());
+        expect(likes.size).toBe(1);
+        expect(likes.get(19)).toBe(3n);
 
         //now lets check the like contract from 7s user
-        const likeContract = data.blockchain.openContract(UserLike.fromAddress(await post.getUserLike(await data.userAccounts[7].getData().then(e => e.userId))));
+        const likeContract = data.blockchain.openContract(
+            await UserLike.fromInit(
+                data.master.address,
+                post.address,
+                await data.userAccounts[7].getData().then((e) => e.userId),
+            ),
+        );
         const { likeValue } = await likeContract.getValue();
 
-        expect(likeValue!.isLike).toBe(false);
+        expect(likeValue!.char).toBe(19n);
 
         //now lets check the like contract from 3rd user - the contract should not exist, because the like was deleted
         const likeContractNotExists = data.blockchain.openContract(
-            UserLike.fromAddress(await post.getUserLike(await data.userAccounts[3].getData().then(e => e.userId))),
+            UserLike.fromAddress(await post.getLike(await data.userAccounts[6].getData().then((e) => e.userId))),
         );
-        await expect(likeContractNotExists.getValue()).rejects.toBeTruthy();
-
-
+        const {
+            likeValue: { char },
+        } = await likeContractNotExists.getValue();
+        expect(char).toBe(0n);
     });
     it('should not double like', async () => {
-        const {userId: ownerUserId} = await data.userAccounts[0]!.getData();
+        const { userId: ownerUserId } = await data.userAccounts[0]!.getData();
         const post = await createPost(
             {
                 account: data.userAccounts[0]!,
@@ -180,51 +189,156 @@ describe('Post', () => {
             },
             { text: 'Hello, everybody, lets like/dislike this post!' },
         );
-        const {postId} = await post.getData();
-        await data.userAccounts[5]!.send(
-            data.userWallets[5]!.getSender(),
+        for (let i = 0; i < 10; i++) {
+            const { transactions } = await data.userAccounts[i]!.send(
+                data.userWallets[0]!.getSender(),
+                { value: toNano('0.1') },
+                {
+                    $$type: 'UserAddLike',
+                    to: post.address,
+                    isLike: {
+                        $$type: 'LikeValue',
+                        char: 1n,
+                    },
+                },
+            );
+        }
+        const { likes } = await post.getData();
+        expect(likes.size).toBe(1);
+        expect(likes.get(1)).toBe(1n);
+        await data.userAccounts[0]!.send(
+            data.userWallets[0]!.getSender(),
             { value: toNano('0.1') },
             {
-                $$type: 'UserAddLikePost',
-                postId,
-                ownerUserId,
+                $$type: 'UserAddLike',
+                to: post.address,
                 isLike: {
                     $$type: 'LikeValue',
-                    isLike: true,
-                }
+                    char: 0n,
+                },
             },
         );
-        expect(await post.getData().then(e => e.likesCount)).toBe(1n);
-        await data.userAccounts[5]!.send(
-            data.userWallets[5]!.getSender(),
+        const { likes: likesAfter } = await post.getData();
+        expect(likesAfter.size).toBe(0);
+
+        // await data.userAccounts[5]!.send(
+        //     data.userWallets[5]!.getSender(),
+        //     { value: toNano('0.1') },
+        //     {
+        //         $$type: 'UserAddLikePost',
+        //         postId,
+        //         ownerUserId,
+        //         isLike: {
+        //             $$type: 'LikeValue',
+        //             isLike: true,
+        //         }
+        //     },
+        // );
+        // expect(await post.getData().then(e => e.likesCount)).toBe(1n);
+        // await data.userAccounts[5]!.send(
+        //     data.userWallets[5]!.getSender(),
+        //     { value: toNano('0.1') },
+        //     {
+        //         $$type: 'UserAddLikePost',
+        //         postId,
+        //         ownerUserId,
+        //         isLike: {
+        //             $$type: 'LikeValue',
+        //             isLike: true,
+        //         }
+        //     },
+        // );
+        // expect(await post.getData().then(e => e.likesCount)).toBe(1n);
+        // await data.userAccounts[5]!.send(
+        //     data.userWallets[5]!.getSender(),
+        //     { value: toNano('0.1') },
+        //     {
+        //         $$type: 'UserAddLikePost',
+        //         postId,
+        //         ownerUserId,
+        //         isLike: {
+        //             $$type: 'LikeValue',
+        //             isLike: false,
+        //         }
+        //     },
+        // );
+        // const { likesCount, dislikesCount } = await post.getData();
+        // expect(likesCount).toBe(0n);
+        // expect(dislikesCount).toBe(1n);
+    });
+    it('should edit post', async () => {
+        const post = await createPost(
+            {
+                account: data.userAccounts[0]!,
+                wallet: data.userWallets[0]!,
+                blockchain: data.blockchain,
+            },
+            { text: 'Hello, everybody, lets like/dislike this post!' },
+        );
+        const { postId } = await post.getData();
+        await data.userAccounts[0]!.send(
+            data.userWallets[0]!.getSender(),
             { value: toNano('0.1') },
             {
-                $$type: 'UserAddLikePost',
+                $$type: 'UserUpdateTextPost',
                 postId,
-                ownerUserId,
-                isLike: {
-                    $$type: 'LikeValue',
-                    isLike: true,
-                }
+                text: 'Hello, everybody, lets like/dislike this post! Edited!',
             },
         );
-        expect(await post.getData().then(e => e.likesCount)).toBe(1n);
-        await data.userAccounts[5]!.send(
-            data.userWallets[5]!.getSender(),
-            { value: toNano('0.1') },
+        const { text } = await post.getData();
+        expect(text).toBe('Hello, everybody, lets like/dislike this post! Edited!');
+    });
+
+    it('should comment post tree', async () => {
+        const post = await createPost(
             {
-                $$type: 'UserAddLikePost',
-                postId,
-                ownerUserId,
-                isLike: {
-                    $$type: 'LikeValue',
-                    isLike: false,
-                }
+                account: data.userAccounts[0]!,
+                wallet: data.userWallets[0]!,
+                blockchain: data.blockchain,
             },
+            { text: 'Hello, everybody, lets like/dislike this post!' },
         );
-        const { likesCount, dislikesCount } = await post.getData();
-        expect(likesCount).toBe(0n);
-        expect(dislikesCount).toBe(1n);
+        let root: Tree = {value: post.address, children: []};
+        let curr = root;
+        for (let i = 0; i < 4; i++) {
+            for (let child = 0; child < 1 + Math.ceil(Math.random() * 2); child++) {
+                let ownerObject = data.blockchain.openContract(Comment.fromAddress(curr.value));
+                let oldChildCount = await ownerObject.getChildren();
+                const { transactions } = await data.userAccounts[child]!.send(
+                    data.userWallets[child]!.getSender(),
+                    { value: toNano('0.1') },
+                    {
+                        $$type: 'ExternalAddComment',
+                        parentAddress: ownerObject.address,
+                        text: 'Hello, everybody, lets comment this post!',
+                    },
+                );
+                const newChildCount = await ownerObject.getChildren();
+                expect(newChildCount).toBe(oldChildCount + 1n);
+                const childComment = await ownerObject.getChildComment(newChildCount);
+
+                expect(transactions).toHaveTransaction({
+                    from: ownerObject.address,
+                    to: childComment,
+                    success: true,
+                })
+                curr.children.push({ value: childComment, children: [] });
+            }
+            curr = curr.children[Math.floor(Math.random() * curr.children.length)];
+        }
+        async function checkIT(address: Address, childrenCountNeed: number){
+            const ownerObject = data.blockchain.openContract(Comment.fromAddress(address));
+            const childrenCount = await ownerObject.getChildren();
+            expect(childrenCount).toBe(BigInt(childrenCountNeed));
+        }
+        async function iterateOver(el: Tree){
+            await checkIT(el.value, el.children.length);
+            for (let i = 0; i < el.children.length; i++){
+                await iterateOver(el.children[i]);
+            }
+        }
+        await iterateOver(root);
+
     });
     //     it('should set text', async () => {
     //         const text = `

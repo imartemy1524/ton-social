@@ -26,7 +26,9 @@ struct UserData{
 const NullAddress: Address = address("UQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJKZ");
 
 
-contract User with OwnableTransferable, Excessable, BlockableByMaster, PostCommunicator, CommentCommunicator, LikeAdderCommunicator{
+contract User with OwnableTransferable, Excessable, BlockableByMaster, PostCommunicator, CommentCommunicator, LikeAdderCommunicator, IUser{
+    override const MinStorageFee: Int = ton("0.04");
+    override const ComputeFee: Int = ton("0.013");
     //variables from traits
     blocked: Bool;
     master: Address;

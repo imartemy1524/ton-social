@@ -17,8 +17,12 @@ struct PostData{
     ownerUserId: Int as uint64;
     commentsCount: Int as uint64;
     master: Address;
+    date: Int as uint64;
 }
-contract UserPost with LikeableObject, Excessable, Commentable, UserOwnable {
+contract UserPost with LikeableObject, Excessable, Commentable, UserOwnable, Sender {
+    override const MinStorageFee: Int = ton("0.02");
+    override const ComputeFee: Int = ton("0.011");
+
     //post variables
     postId: Int as uint64;
     text: String = "";
@@ -58,12 +62,20 @@ contract UserPost with LikeableObject, Excessable, Commentable, UserOwnable {
     get fun data(): PostData{
         return PostData{
             text: self.text,
-            likes: self.likes,
+            likes: self.likesValues(),
             ownerUserId: self.ownerUserId,
             master: self.master,
             postId: self.postId,
-            commentsCount: self.commentsCount
+            commentsCount: self.commentsCount,
+            date: self.date
         };
+    }
+
+    override inline fun getObjectOwnerUserId(): Int{
+        return self.ownerUserId;
+    }
+    override inline fun requireInitialized(){
+        require(self.date != 0, "Post is not initialized");
     }
 
 }

@@ -40,7 +40,7 @@ export async function deployMaster(): Promise<SocialMedia> {
             to: user.address,
             success: true,
         });
-        expect(await user.getOwner()).toEqualAddress(userWallet.address);
+        expect(await user.getOwner().then(e=>e.toString())).toBe(userWallet.address.toString());
         userAccounts.push(user);
     }
 

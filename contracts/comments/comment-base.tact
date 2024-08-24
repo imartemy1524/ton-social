@@ -1,5 +1,6 @@
 message InternalInitializeComment{
     data: CommentCreateData;
+    objectOwnerUserId: Int as uint64;
 }
 struct CommentCreateData{
     text: String;
@@ -19,7 +20,9 @@ trait CommentBase with Excessable, Parentable, UserOwnable{
     date: Int;
     ownerUserId: Int;
     text: String;
+    //parentable
     parent: Address;
+    parentObjectUserOwnerId: Int;
 
     //this message should be received from parent (Commentable contract)
     receive(m: InternalInitializeComment){
@@ -27,6 +30,7 @@ trait CommentBase with Excessable, Parentable, UserOwnable{
         self.ownerUserId = m.data.fromUserId;
         self.text = m.data.text;
         self.date = now();
+        self.parentObjectUserOwnerId = m.objectOwnerUserId;
         self.excess(m.data.excessTo, "ok");
     }
     //this message used for updating

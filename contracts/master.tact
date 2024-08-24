@@ -1,5 +1,6 @@
 import "@stdlib/ownable";
 import "./user.tact";
+import "./nft/nfts.tact";
 message ChangeRegisterAmount{
     amount: Int as coins;
 }

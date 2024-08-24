@@ -1,7 +1,7 @@
 
-trait Excessable{
+trait Excessable with Sender{
     inline fun excess(address: Address, message: String){
-        send(SendParameters{
+        self.sendWithMinStorage(SendParameters{
             value: 0,
             mode: SendRemainingValue,
             body: message.asComment(),

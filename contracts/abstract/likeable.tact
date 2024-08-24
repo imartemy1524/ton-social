@@ -1,3 +1,4 @@
+import "./sender.tact";
 // Public structs
 struct LikeValue{
     //islike = true - like, false - dislike
@@ -66,11 +67,20 @@ trait LikeableObject with Excessable{
         require(false, "Not implemented");
         return NullAddress;
     }
+    inline fun likesValues(): map<Int as uint8, Int as int64>{
+        let ans = self.likes;
+        foreach(key, value in ans){
+            if(value == 0 || key == 0){
+                ans.del(key);
+            }
+        }
+        return ans;
+    }
 
 }
 
 
-contract UserLike with Blockable, UserOwnable{
+contract UserLike with Blockable, UserOwnable, Sender{
     //block object to prevent double messages
     blocked: Bool = false;
     master: Address;
@@ -91,9 +101,8 @@ contract UserLike with Blockable, UserOwnable{
         self.requireNotBlocked();
         require(self.value.char != m.value.char, "You can't like twice");
         self.blocked = true;
-        send(SendParameters{
+        self.sendWithMinStorage(SendParameters{
             value: 0,
-            mode: SendRemainingValue,
             body: SetLikeInternalNotification{
                 userId: self.ownerUserId,
                 oldValue: self.value,
@@ -112,7 +121,7 @@ contract UserLike with Blockable, UserOwnable{
     }
     bounced(m: bounced<SetLikeInternalNotification>){
         //Very sad, you're baka, the contract doesn't exists, or you've passed invalid address, or contract doesn't accept likes.
-        //But if it would exists in future - we should unblock actions
+        //But if there is situation, that it just don't yet exists, but it would exists in future - we should unblock actions
         self.blocked = false;
     }
 
@@ -127,4 +136,9 @@ contract UserLike with Blockable, UserOwnable{
             userId: self.ownerUserId
         };
     }
+    override inline fun getMasterAddress(): Address{
+        return self.master;
+    }
+
+
 }

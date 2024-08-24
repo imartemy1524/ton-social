@@ -13,6 +13,7 @@ struct CommentData{
 contract Comment with CommentBase, Masterable, Parentable, LikeableObject, Commentable{
     master: Address;
     parent: Address;
+    parentObjectUserOwnerId: Int as uint64 = 0;
 
     //own variables
     date: Int as uint64 = 0;
@@ -42,6 +43,12 @@ contract Comment with CommentBase, Masterable, Parentable, LikeableObject, Comme
             parent: self.parent,
             childrenCount: self.commentsCount,
         };
+    }
+    override inline fun getObjectOwnerUserId(): Int{
+        return self.parentObjectUserOwnerId;
+    }
+    override inline fun requireInitialized(){
+        require(self.date != 0, "Comment is not initialized");
     }
 
 }
