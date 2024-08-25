@@ -27,7 +27,7 @@ struct UserData{
 const NullAddress: Address = address("UQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJKZ");
 
 
-contract User with OwnableTransferable, Excessable, BlockableByMaster, PostCommunicator, CommentCommunicator, LikeAdderCommunicator, IUser{
+contract User with OwnableTransferable, Excessable, BlockableByMaster, PostCommunicator, CommentCommunicator, LikeAdderCommunicator, IUser, NftItem{
     override const MinStorageFee: Int = ton("0.04");
     override const ComputeFee: Int = ton("0.013");
 

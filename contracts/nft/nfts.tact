@@ -1,25 +1,33 @@
 import "./nft-structs.tact";
 
 
-struct OnChainData{
+struct NFTCellString{
     byte: Int as uint8;
-    data: Cell;
+    data: String;
+}
+struct ElString{value: String;}
+//https://medium.com/nexton-node/nfts-with-on-chain-metadata-on-ton-tutorial-55ac0cbb17d5#a51c
+inline fun nftTextToCell(value: String): Cell {
+    return beginCell().storeUint(0, 8).storeSlice(value.asSlice()).asCell();
 }
 // builds and returns cell of onchain NFT content, generated dynamically
-// Reference: https://github.com/ton-blockchain/TEPs/blob/master/text/0064-token-data-standard.md
-inline fun buildData(content: map<Int, Cell>): Cell{
-    let ans: map<Int, Cell> = emptyMap();
+// Official reference (not clear): https://github.com/ton-blockchain/TEPs/blob/master/text/0064-token-data-standard.md
+// Good reference: https://medium.com/nexton-node/nfts-with-on-chain-metadata-on-ton-tutorial-55ac0cbb17d5
+
+inline fun buildData(content: map<Int, ElString>): Cell{
+    let ans: map<Int as uint256, Cell> = emptyMap();
     foreach(key, value in content){
         //
-        ans.set(key, beginCell().storeUint(0x01, 8).storeSlice(value.asSlice()).endCell());
+        ans.set(key,nftTextToCell(value.value));
     }
-    return OnChainData{
-        byte: 0,
-        data: ans.asCell()!!
-    }.toCell();
+    return beginCell().storeInt(0, 8).storeBool(true).storeRef(ans.asCell()!!.asSlice().asCell()).endCell()
+//    OnChainData{
+//        byte: 0,
+//        data: ans
+//    }.toCell();
 }
 
-trait NftAble with Masterable, Ownable, IUser, Blockable{
+trait NftItem with Masterable, Ownable, IUser, Blockable{
     blocked: Bool;
     userId: Int;
     nickname: String?;
@@ -80,7 +88,7 @@ trait NftAble with Masterable, Ownable, IUser, Blockable{
         return value - (storageFee + self.ComputeFee);
     }
     // getter
-    get fun get_nft_data(index: Int): GetNftData {
+    get fun get_nft_data(): GetNftData {
         return GetNftData{
             is_initialized: self.owner != NullAddress,
             index: self.userId,
@@ -112,11 +120,11 @@ trait NftCollection with Ownable, UserPerformable{
 
     get fun get_collection_data(): CollectionData {
         //TODO: fix asSlice and then asCell...
-        let data: map<Int, Cell> = emptyMap();
-        data.set(sha256("name"), self.CollectionName.asSlice().asCell());
-        data.set(sha256("description"), self.CollectionDescription.asSlice().asCell());
-        data.set(sha256("image"), self.LogoURL.asSlice().asCell());
-        data.set(sha256("marketplace"), self.MartketplaceURL.asSlice().asCell());
+        let data: map<Int, ElString> = emptyMap();
+        data.set(sha256("name"), ElString{value: self.CollectionName});
+        data.set(sha256("description"), ElString{value: self.CollectionDescription});
+        data.set(sha256("image"), ElString{value: self.LogoURL});
+        data.set(sha256("marketplace"), ElString{value: self.MartketplaceURL});
         return CollectionData{
             next_item_index: self.lastUserId,
             collection_content: buildData(data),
@@ -125,10 +133,10 @@ trait NftCollection with Ownable, UserPerformable{
     }
     get fun get_nft_content(index: Int, individual_content: Cell): Cell {
         let content: IndividualContent = IndividualContent.fromCell(individual_content);
-        let data: map<Int, Cell> = emptyMap();
-        data.set(sha256("name"), beginString().concat("User ").concat(content.nickname).toCell());
-        data.set(sha256("image"), (content.avatar != null) ? content.avatar!!.asSlice().asCell() : self.DefaultUserAvatar.asSlice().asCell());
-        data.set(sha256("description"), beginString().concat("Unique user \"").concat(content.nickname).concat("\" in NetoTON social network").toSlice().asCell());
+        let data: map<Int, ElString> = emptyMap();
+        data.set(sha256("name"), ElString{value: beginString().concat("User ").concat(content.nickname).toString()});
+        data.set(sha256("image"), ElString{value:(content.avatar != null) ? content.avatar!! : self.DefaultUserAvatar});
+        data.set(sha256("description"), ElString{value: beginString().concat("Unique user \"").concat(content.nickname).concat("\" in NetoTON social network").toString()});
 
         return buildData(data);
     }
