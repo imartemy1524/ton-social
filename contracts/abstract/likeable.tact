@@ -35,6 +35,7 @@ message SetLikeSuccess{
 // Likes should be added from main user contract, which DEPLOYS UserLike contracts for each user.
 
 trait LikeableObject with Excessable{
+
     // liketype -> count
     likes: map<Int as uint8, Int as int64>;
 
@@ -80,7 +81,7 @@ trait LikeableObject with Excessable{
 }
 
 
-contract UserLike with Blockable, UserOwnable, Sender{
+contract UserLike with Blockable, UserOwnable{
     //block object to prevent double messages
     blocked: Bool = false;
     master: Address;
@@ -101,16 +102,17 @@ contract UserLike with Blockable, UserOwnable, Sender{
         self.requireNotBlocked();
         require(self.value.char != m.value.char, "You can't like twice");
         self.blocked = true;
-        self.sendWithMinStorage(SendParameters{
-            value: 0,
-            body: SetLikeInternalNotification{
+        self.forward(
+            self.toObject,
+            SetLikeInternalNotification{
                 userId: self.ownerUserId,
                 oldValue: self.value,
                 newValue: m.value,
                 excessTo: m.excessTo
             }.toCell(),
-            to: self.toObject
-        });
+            true,
+            null
+        );
     }
     receive(m: SetLikeSuccess){
         self.requireFromObject();

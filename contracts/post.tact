@@ -19,9 +19,10 @@ struct PostData{
     master: Address;
     date: Int as uint64;
 }
-contract UserPost with LikeableObject, Excessable, Commentable, UserOwnable, Sender {
-    override const MinStorageFee: Int = ton("0.02");
-    override const ComputeFee: Int = ton("0.011");
+contract UserPost with LikeableObject, Excessable, Commentable, UserOwnable {
+//    override const MinStorageFee: Int = ton("0.02");
+//    override const ComputeFee: Int = ton("0.011");
+    override const storageReserve: Int = ton("0.02");
 
     //post variables
     postId: Int as uint64;

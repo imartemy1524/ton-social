@@ -9,9 +9,11 @@ message(0x12345678) Register{}
 contract Master with OwnableTransferable, Deployable, MasterUserBans, NftCollection{
     override const CollectionName: String = "NetoTon users";
     override const CollectionDescription: String = "Users on NetoTon blockchain, each represented by a unique NFT";
+    //TODO
     override const LogoURL: String = "https://i.imgur.com/P8tmkRB.png";
     override const MartketplaceURL: String = "getgems.io";
-    override const DefaultUserAvatar: String = "https://clck.ru/3Cpgs9";
+    //TODO
+    override const DefaultUserAvatar: String = "https://i.imgur.com/AVgzcgn.png";
 
     //10%
     royaltyNumberator: Int as uint16 = 10_00;

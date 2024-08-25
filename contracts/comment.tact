@@ -11,6 +11,7 @@ struct CommentData{
 }
 
 contract Comment with CommentBase, Masterable, Parentable, LikeableObject, Commentable{
+    override const storageReserve: Int = ton("0.02");
     master: Address;
     parent: Address;
     parentObjectUserOwnerId: Int as uint64 = 0;

@@ -7,7 +7,7 @@ struct GetUserNftData {
 }
 struct IndividualContent {
     avatar: String?;
-    nickname: String;
+    nickname: String?;
 }
 message(0x2fcb26a2) GetStaticData {
     query_id: Int as uint64;

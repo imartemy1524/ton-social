@@ -28,9 +28,7 @@ const NullAddress: Address = address("UQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 
 
 contract User with OwnableTransferable, Excessable, BlockableByMaster, PostCommunicator, CommentCommunicator, LikeAdderCommunicator, IUser, NftItem{
-    override const MinStorageFee: Int = ton("0.04");
-    override const ComputeFee: Int = ton("0.013");
-
+    override const storageReserve: Int = ton("0.03");
 
     nickname: String? = null;
     avatar: String? = null;

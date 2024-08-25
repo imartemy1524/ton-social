@@ -28,6 +28,7 @@ inline fun buildData(content: map<Int, ElString>): Cell{
 }
 
 trait NftItem with Masterable, Ownable, IUser, Blockable{
+    const ComputeFee: Int = ton("0.011");
     blocked: Bool;
     userId: Int;
     nickname: String?;
@@ -84,7 +85,7 @@ trait NftItem with Masterable, Ownable, IUser, Blockable{
     // does.... a..... computes feee...??? Magically....
     inline fun msgValue(value: Int): Int {
         let tonBalanceBeforeMsg: Int = myBalance() - value;
-        let storageFee: Int = self.MinStorageFee - min(tonBalanceBeforeMsg, self.MinStorageFee);
+        let storageFee: Int = self.storageReserve - min(tonBalanceBeforeMsg, self.storageReserve);
         return value - (storageFee + self.ComputeFee);
     }
     // getter
@@ -96,7 +97,7 @@ trait NftItem with Masterable, Ownable, IUser, Blockable{
             owner_address: self.owner,
             individual_content: IndividualContent{
                 avatar: self.avatar,
-                nickname: self.userNickname()
+                nickname: self.nickname != null? self.nickname: null
             }.toCell()
         };
     }
@@ -134,9 +135,17 @@ trait NftCollection with Ownable, UserPerformable{
     get fun get_nft_content(index: Int, individual_content: Cell): Cell {
         let content: IndividualContent = IndividualContent.fromCell(individual_content);
         let data: map<Int, ElString> = emptyMap();
-        data.set(sha256("name"), ElString{value: beginString().concat("User ").concat(content.nickname).toString()});
+        let builderName = beginString();
+        builderName.append("User ");
+        appendNickName(builderName, content.nickname, index);
+        let builderDescription = beginString();
+        builderDescription.append("Unique user ");
+        appendNickName(builderDescription, content.nickname, index);
+        builderDescription.append(" in NetoTON social network");
+
+        data.set(sha256("name"), ElString{value: builderName.toString()});
         data.set(sha256("image"), ElString{value:(content.avatar != null) ? content.avatar!! : self.DefaultUserAvatar});
-        data.set(sha256("description"), ElString{value: beginString().concat("Unique user \"").concat(content.nickname).concat("\" in NetoTON social network").toString()});
+        data.set(sha256("description"), ElString{value: builderDescription.toString()});
 
         return buildData(data);
     }
@@ -152,4 +161,13 @@ trait NftCollection with Ownable, UserPerformable{
     }
 
 
+}
+
+inline fun appendNickName(builder: StringBuilder, nickname: String?, index: Int){
+    if(nickname != null){
+        builder.append(nickname!!);
+    } else {
+        builder.append("#");
+        builder.append(index.toString());
+    }
 }
