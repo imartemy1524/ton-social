@@ -146,6 +146,10 @@ class NftOnChainDataParserClass {
     }
 }
 
+type IDataAttribute = {
+    trait_type: string;
+    value: string;
+}
 interface NftData{
     name?: string;
     description?: string;
@@ -153,6 +157,7 @@ interface NftData{
     image_data?: Buffer;
     marketplace?: string;
 
+    attributes?: IDataAttribute[]
 }
 export function decodeNftDataOnchain(data: Cell): NftData {
     const NftOnChainDataParser = new NftOnChainDataParserClass();
@@ -182,7 +187,7 @@ export function decodeNftDataOnchain(data: Cell): NftData {
         Array.from(ans).map(([k, v]) => [BigInt('0x' + k.toString('hex')), v]),
     );
     const keys = new Map<bigint, string>(
-        ['image', 'name', 'description', 'image', 'marketplace', 'image_data'].map((key) => [sha256(key), key]),
+        ['image', 'name', 'description', 'image', 'marketplace', 'image_data', 'attributes'].map((key) => [sha256(key), key]),
     );
 
     const realGoodObject: NftData = {};
@@ -191,9 +196,11 @@ export function decodeNftDataOnchain(data: Cell): NftData {
         if(!realKey){
             console.warn('key not found', keyHash);
         }
-        let valueStrange = ansMapped.get(keyHash);
         let value: Buffer|string = valueBuffer.content;
-        if(realKey != 'image_data'){
+        if(realKey === 'attributes'){
+            value = JSON.parse(value!.toString());
+        }
+        else if(realKey != 'image_data'){
             value = value!.toString();
         }
         //@ts-ignore

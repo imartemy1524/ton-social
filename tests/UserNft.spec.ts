@@ -45,12 +45,15 @@ describe('UserNft', () => {
         } = data;
         const { individual_content, index } = await user.getGetNftData();
         const realContent = await master.getGetNftContent(index, individual_content);
-        const onchainDataCollection = decodeNftDataOnchain(realContent);
+        const onchainDataNFT = decodeNftDataOnchain(realContent);
 
-        expect(Object.keys(onchainDataCollection).length).toBeGreaterThan(0);
-        expect(onchainDataCollection.name).toBeTruthy();
-        expect(onchainDataCollection.description).toBeTruthy();
-        expect(onchainDataCollection.image).toBeTruthy();
+        expect(Object.keys(onchainDataNFT).length).toBeGreaterThan(0);
+        expect(onchainDataNFT.name).toBeTruthy();
+        expect(onchainDataNFT.description).toBeTruthy();
+        expect(onchainDataNFT.image).toBeTruthy();
+        expect(onchainDataNFT.attributes?.some(e=>e.trait_type === 'Posts count')).toBeTruthy();
+        expect(onchainDataNFT.attributes?.some(e=>e.trait_type === 'Register date')).toBeTruthy();
+
     });
 
     it('should transfer', async () => {

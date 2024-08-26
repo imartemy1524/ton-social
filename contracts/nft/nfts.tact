@@ -1,31 +1,6 @@
 import "./nft-structs.tact";
-
-
-struct NFTCellString{
-    byte: Int as uint8;
-    data: String;
-}
-struct ElString{value: String;}
-//https://medium.com/nexton-node/nfts-with-on-chain-metadata-on-ton-tutorial-55ac0cbb17d5#a51c
-inline fun nftTextToCell(value: String): Cell {
-    return beginCell().storeUint(0, 8).storeSlice(value.asSlice()).asCell();
-}
-// builds and returns cell of onchain NFT content, generated dynamically
-// Official reference (not clear): https://github.com/ton-blockchain/TEPs/blob/master/text/0064-token-data-standard.md
-// Good reference: https://medium.com/nexton-node/nfts-with-on-chain-metadata-on-ton-tutorial-55ac0cbb17d5
-
-inline fun buildData(content: map<Int, ElString>): Cell{
-    let ans: map<Int as uint256, Cell> = emptyMap();
-    foreach(key, value in content){
-        //
-        ans.set(key,nftTextToCell(value.value));
-    }
-    return beginCell().storeInt(0, 8).storeBool(true).storeRef(ans.asCell()!!.asSlice().asCell()).endCell()
-//    OnChainData{
-//        byte: 0,
-//        data: ans
-//    }.toCell();
-}
+import "./metadata.tact";
+import "../utils/json.tact";
 
 trait NftItem with Masterable, Ownable, IUser, Blockable{
     const ComputeFee: Int = ton("0.011");
@@ -34,6 +9,8 @@ trait NftItem with Masterable, Ownable, IUser, Blockable{
     nickname: String?;
     master: Address;
     owner: Address;
+    postsCount: Int;
+    registerDate: Int;
     avatar: String?;
     receive(msg: GetStaticData){
         let ctx: Context = context();
@@ -97,7 +74,9 @@ trait NftItem with Masterable, Ownable, IUser, Blockable{
             owner_address: self.owner,
             individual_content: IndividualContent{
                 avatar: self.avatar,
-                nickname: self.nickname != null? self.nickname: null
+                nickname: self.nickname != null? self.nickname: null,
+                postsCount: self.postsCount,
+                registerDate: self.registerDate
             }.toCell()
         };
     }
@@ -135,17 +114,13 @@ trait NftCollection with Ownable, UserPerformable{
     get fun get_nft_content(index: Int, individual_content: Cell): Cell {
         let content: IndividualContent = IndividualContent.fromCell(individual_content);
         let data: map<Int, ElString> = emptyMap();
-        let builderName = beginString();
-        builderName.append("User ");
-        appendNickName(builderName, content.nickname, index);
-        let builderDescription = beginString();
-        builderDescription.append("Unique user ");
-        appendNickName(builderDescription, content.nickname, index);
-        builderDescription.append(" in NetoTON social network");
 
-        data.set(sha256("name"), ElString{value: builderName.toString()});
+        data.set(sha256("name"), ElString{value: content.buildNftName(index)});
         data.set(sha256("image"), ElString{value:(content.avatar != null) ? content.avatar!! : self.DefaultUserAvatar});
-        data.set(sha256("description"), ElString{value: builderDescription.toString()});
+        data.set(sha256("description"), ElString{value: content.buildDescription(index)});
+        //TODO: fix later
+        data.set(sha256("marketplace"), ElString{value: self.MartketplaceURL});
+        data.set(sha256("attributes"), ElString{value: content.buildAttributesString()});
 
         return buildData(data);
     }
@@ -163,11 +138,3 @@ trait NftCollection with Ownable, UserPerformable{
 
 }
 
-inline fun appendNickName(builder: StringBuilder, nickname: String?, index: Int){
-    if(nickname != null){
-        builder.append(nickname!!);
-    } else {
-        builder.append("#");
-        builder.append(index.toString());
-    }
-}

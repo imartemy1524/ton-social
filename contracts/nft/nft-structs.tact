@@ -5,10 +5,7 @@ struct GetUserNftData {
     owner_address: Address;
     individual_content: Cell;
 }
-struct IndividualContent {
-    avatar: String?;
-    nickname: String?;
-}
+
 message(0x2fcb26a2) GetStaticData {
     query_id: Int as uint64;
 }
