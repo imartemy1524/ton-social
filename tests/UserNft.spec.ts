@@ -59,7 +59,8 @@ describe('UserNft', () => {
         expect(onchainDataNFT.image || onchainDataNFT.image_data).toBeTruthy();
         expect(onchainDataNFT.attributes?.some((e) => e.trait_type === 'Posts count')).toBeTruthy();
         expect(onchainDataNFT.attributes?.some((e) => e.trait_type === 'Register date')).toBeTruthy();
-
+        const g = DefaultAvatar;
+        expect(onchainDataNFT.image_data?.toString('binary') == (g)).toBeTruthy();
     });
 
     it('should transfer', async () => {
