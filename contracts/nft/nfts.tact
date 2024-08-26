@@ -14,13 +14,13 @@ trait NftItem with Masterable, Ownable, IUser, Blockable{
     avatar: String?;
     receive(msg: GetStaticData){
         let ctx: Context = context();
-            send(SendParameters {
-            to: ctx.sender,
-            value: 0,
-            mode: SendRemainingValue,  // (return msg amount except gas fees)
-            bounce: true,
-            body: ReportStaticData{
-            query_id: msg.query_id, index_id: self.userId, collection: self.master}.toCell()
+        send(SendParameters {
+        to: ctx.sender,
+        value: 0,
+        mode: SendRemainingValue,  // (return msg amount except gas fees)
+        bounce: true,
+        body: ReportStaticData{
+        query_id: msg.query_id, index_id: self.userId, collection: self.master}.toCell()
         });
     }
 
@@ -39,21 +39,22 @@ trait NftItem with Masterable, Ownable, IUser, Blockable{
                 mode: SendPayGasSeparately,
                 bounce: true,
                 body: OwnershipAssigned{
-                    query_id: msg.query_id,
-                    prev_owner: ctx.sender,
-                    forward_payload: msg.forward_payload
-                }.toCell()
+                query_id: msg.query_id,
+                prev_owner: ctx.sender,
+                forward_payload: msg.forward_payload
+            }.toCell()
             });
         }
 
         msgValue -= ctx.readForwardFee();
         if (msg.response_destination != null) {
             send(SendParameters{
-                to: msg.response_destination!!,
-                value: msgValue - msg.forward_amount,
-                mode: SendPayGasSeparately,
-                bounce: true,
-                body: Excesses{ query_id: msg.query_id }.toCell()
+            to: msg.response_destination!!,
+            value: msgValue - msg.forward_amount,
+            mode: SendPayGasSeparately,
+            bounce: true,
+            body: Excesses{
+            query_id: msg.query_id }.toCell()
             });
         }
     }
@@ -91,8 +92,10 @@ trait NftCollection with Ownable, UserPerformable{
     abstract const CollectionDescription: String;
     abstract const LogoURL: String;
     abstract const MartketplaceURL: String;
-    abstract const DefaultUserAvatar: String;
+    abstract inline fun getDefaultAvatar(): String;
     abstract inline fun getRoyaltyAddress(): Address;
+    //if true - build data as snake cell, otherwise as dict
+    virtual const BUILD_NFT_DATA_AS_SNAKE: Bool = false;
     lastUserId: Int;
     //percents * 100 (1234 = 12.34%)
     royaltyNumberator: Int;
@@ -101,13 +104,17 @@ trait NftCollection with Ownable, UserPerformable{
     get fun get_collection_data(): CollectionData {
         //TODO: fix asSlice and then asCell...
         let data: map<Int, ElString> = emptyMap();
-        data.set(sha256("name"), ElString{value: self.CollectionName});
-        data.set(sha256("description"), ElString{value: self.CollectionDescription});
-        data.set(sha256("image"), ElString{value: self.LogoURL});
-        data.set(sha256("marketplace"), ElString{value: self.MartketplaceURL});
+        data.set(sha256("name"), ElString{
+        value: self.CollectionName});
+        data.set(sha256("description"), ElString{
+        value: self.CollectionDescription});
+        data.set(sha256("image"), ElString{
+        value: self.LogoURL});
+        data.set(sha256("marketplace"), ElString{
+        value: self.MartketplaceURL});
         return CollectionData{
             next_item_index: self.lastUserId,
-            collection_content: buildData(data),
+            collection_content: buildData(data, self.BUILD_NFT_DATA_AS_SNAKE),
             owner_address: self.owner,
         };
     }
@@ -115,14 +122,24 @@ trait NftCollection with Ownable, UserPerformable{
         let content: IndividualContent = IndividualContent.fromCell(individual_content);
         let data: map<Int, ElString> = emptyMap();
 
-        data.set(sha256("name"), ElString{value: content.buildNftName(index)});
-        data.set(sha256("image"), ElString{value:(content.avatar != null) ? content.avatar!! : self.DefaultUserAvatar});
-        data.set(sha256("description"), ElString{value: content.buildDescription(index)});
-        //TODO: fix later
-        data.set(sha256("marketplace"), ElString{value: self.MartketplaceURL});
-        data.set(sha256("attributes"), ElString{value: content.buildAttributesString()});
+        data.set(sha256("name"), ElString{
+        value: content.buildNftName(index)});
+        let avatar: String = content.avatar != null? content.avatar!!: self.getDefaultAvatar();
+        //starts with http
+        if(avatar.asSlice().preloadUint(32)== 0b01101000011101000111010001110000){
+            data.set(sha256("image"), ElString{ value: avatar});
+        } else {
+            data.set(sha256("image_data"), ElString{ value: avatar});
+        }
 
-        return buildData(data);
+        //        data.set(sha256("image"), ElString{value:(content.avatar != null) ? content.avatar!! : self.DefaultUserAvatar});
+        data.set(sha256("description"), ElString{
+        value: content.buildDescription(index)});
+        //TODO: fix later
+        data.set(sha256("marketplace"), ElString{ value: self.MartketplaceURL});
+        data.set(sha256("attributes"), ElString{ value: content.buildAttributesString()});
+        let ans = buildData(data, self.BUILD_NFT_DATA_AS_SNAKE);
+        return ans;
     }
     get fun get_nft_address_by_index(index: Int): Address {
         return self.userContractAddress(index);

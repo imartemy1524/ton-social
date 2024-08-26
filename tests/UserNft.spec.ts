@@ -1,8 +1,10 @@
 import '@ton/test-utils';
-import { SocialMedia, deployMaster, decodeNftDataOnchain } from './_helpers';
+import { SocialMedia, deployMaster, decodeNftDataOnchain, DefaultAvatar } from './_helpers';
 import { randomAddress } from '@ton/test-utils';
 import { beginCell, Builder, Cell, Dictionary, DictionaryKey, Slice, toNano } from '@ton/core';
 import { sha256_sync } from '@ton/crypto';
+import { readFile, writeFile } from 'node:fs/promises';
+import { createWriteStream, write } from 'node:fs';
 
 describe('UserNft', () => {
     let data: SocialMedia;
@@ -38,21 +40,25 @@ describe('UserNft', () => {
         expect(onchainDataCollection.description).toBeTruthy();
         expect(onchainDataCollection.image).toBeTruthy();
     });
+    it('should check avatar', async ()=>{
+        const { data: original } = await data.master.getDefaultAva();
+        expect(original).toEqual(DefaultAvatar);
+    })
     it('should nft onchain data be valid', async () => {
         const {
-            userAccounts: [,,user],
+            userAccounts: [, , user],
             master,
         } = data;
         const { individual_content, index } = await user.getGetNftData();
         const realContent = await master.getGetNftContent(index, individual_content);
         const onchainDataNFT = decodeNftDataOnchain(realContent);
-
+        // console.log("NFT Content: ",realContent.toBoc().toString('hex'))
         expect(Object.keys(onchainDataNFT).length).toBeGreaterThan(0);
         expect(onchainDataNFT.name).toBeTruthy();
         expect(onchainDataNFT.description).toBeTruthy();
-        expect(onchainDataNFT.image).toBeTruthy();
-        expect(onchainDataNFT.attributes?.some(e=>e.trait_type === 'Posts count')).toBeTruthy();
-        expect(onchainDataNFT.attributes?.some(e=>e.trait_type === 'Register date')).toBeTruthy();
+        expect(onchainDataNFT.image || onchainDataNFT.image_data).toBeTruthy();
+        expect(onchainDataNFT.attributes?.some((e) => e.trait_type === 'Posts count')).toBeTruthy();
+        expect(onchainDataNFT.attributes?.some((e) => e.trait_type === 'Register date')).toBeTruthy();
 
     });
 

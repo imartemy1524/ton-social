@@ -5,6 +5,7 @@ import { NetworkProvider } from '@ton/blueprint';
 
 export async function run(provider: NetworkProvider) {
     const master = provider.open(await Master.fromInit());
+    const { next_item_index: oldIndex } = await master.getGetCollectionData();
     await master.send(
         provider.sender(),
         {
@@ -16,11 +17,10 @@ export async function run(provider: NetworkProvider) {
     );
     console.log(`Master deployed at ${master.address.toString()}`);
 
-    await provider.waitForDeploy(master.address);
-    const lastUserId = await master.getUsersCount();
-    const userAddress = await master.getUser(lastUserId);
+    const user = await master.getUser(oldIndex);
 
-    console.log(`User deployed at ${userAddress.toString()}`);
+    await provider.waitForDeploy(user, 100);
+    console.log(`User deployed at ${user.toString()}`);
 
     // run methods on `master`
 }
