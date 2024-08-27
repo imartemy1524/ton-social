@@ -6,6 +6,7 @@ import "./post.tact";
 import "./user/comment-communicator.tact";
 import "./user/like-adder-communicator.tact";
 import "./user/iuser.tact";
+import "./subscribtion.tact";
 //system messages
 message InitUserInternal{
     owner: Address;
@@ -65,8 +66,17 @@ contract User with OwnableTransferable, Excessable, BlockableByMaster, PostCommu
         };
     }
 
+
     override inline fun getUserId(): Int{
         return self.userId;
+    }
+    override inline fun getIndividualContent(): Cell{
+        return IndividualContent{
+            avatar: self.avatar,
+            nickname: self.nickname != null? self.nickname: null,
+            postsCount: self.postsCount,
+            registerDate: self.registerDate
+        }.toCell()
     }
 
 }

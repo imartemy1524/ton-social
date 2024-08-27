@@ -19,9 +19,8 @@ struct PostData{
     master: Address;
     date: Int as uint64;
 }
+//sources of user post contract. Only user can communicate with this contract through his own contract (User)
 contract UserPost with LikeableObject, Excessable, Commentable, UserOwnable {
-//    override const MinStorageFee: Int = ton("0.02");
-//    override const ComputeFee: Int = ton("0.011");
     override const storageReserve: Int = ton("0.02");
 
     //post variables

@@ -16,11 +16,11 @@ trait NftItem with Masterable, Ownable, IUser, Blockable{
         let ctx: Context = context();
         send(SendParameters {
         to: ctx.sender,
-        value: 0,
-        mode: SendRemainingValue,  // (return msg amount except gas fees)
-        bounce: true,
-        body: ReportStaticData{
-        query_id: msg.query_id, index_id: self.userId, collection: self.master}.toCell()
+            value: 0,
+            mode: SendRemainingValue,  // (return msg amount except gas fees)
+            bounce: true,
+            body: ReportStaticData{
+            query_id: msg.query_id, index_id: self.userId, collection: self.master}.toCell()
         });
     }
 
@@ -85,8 +85,6 @@ trait NftItem with Masterable, Ownable, IUser, Blockable{
 }
 
 
-
-
 trait NftCollection with Ownable, UserPerformable{
     abstract const CollectionName: String;
     abstract const CollectionDescription: String;
@@ -108,8 +106,7 @@ trait NftCollection with Ownable, UserPerformable{
         value: self.CollectionName});
         data.set(sha256("description"), ElString{
         value: self.CollectionDescription});
-        data.set(sha256("image"), ElString{
-        value: self.LogoURL});
+        data.set(sha256("image"), ElString{ value: self.LogoURL});
         data.set(sha256("marketplace"), ElString{
         value: self.MartketplaceURL});
         return CollectionData{
@@ -132,7 +129,6 @@ trait NftCollection with Ownable, UserPerformable{
             data.set(sha256("image_data"), ElString{ value: avatar});
         }
 
-        //        data.set(sha256("image"), ElString{value:(content.avatar != null) ? content.avatar!! : self.DefaultUserAvatar});
         data.set(sha256("description"), ElString{
         value: content.buildDescription(index)});
         //TODO: fix later

@@ -8,12 +8,33 @@ What is it, a fully decentralized social network? It is a social network that is
 
 This projects contains implementation of a social network on the TON blockchain, and **all** data about users/posts/comments/likes stored and managed **directly** by smart contract, written in tact language.
 
+
+### Conception
+
+Let's take a look, how it works. First of all, there is [Account](./contracts/user.tact) - the main ~~object~~ contract, through which real users (wallets V5, V4 and etc.) communicates with other ~~objects~~ smart contracts (by sending messages to them through wallets, for example TonKeeper). 
+
+You can think of it as a typical "account", which exists in any social media. 
+It implements NFT interface, thus the ownership can be sold/transferred to other wallet.
+
+Owner can set account's avatar (it can be stored either directly in blockchain or in any IPFS-like/TON-Storage-like service, contract support any of them), nickname (he can purchase NFT with unique nickname), and some other data.
+
+
+
+Now, what **account** can do?
+1. Each account can create [posts](./contracts/post.tact) (share some text data), which would be linked to it. 
+2. Other users can leave [comments](./contracts/comment.tact) to the post or to other comments (answering them).
+3. Users can [like](./contracts/abstract/likeable.tact) any [post](./contracts/post.tact) or [comments](./contracts/comment.tact) (in future, like can contain some value, to support user).
+
 ### Features
 
 -  Users can create accounts (many accounts) from one wallet, and use this account to communicate with other users and objects.
 -  Users can create posts, edit them, like them and comment them.
 -  Users can answer other comments, like them and edit.
 -  TODO: Users can have unique nickname in the system and can be found by this nickname.
+
+
+
+
 
 #### Is it fully decentralized?
 Right now, there are 2 "centralized" parts in the system: 
