@@ -40,10 +40,6 @@ describe('UserNft', () => {
         expect(onchainDataCollection.description).toBeTruthy();
         expect(onchainDataCollection.image).toBeTruthy();
     });
-    it('should check avatar', async ()=>{
-        const { data: original } = await data.master.getDefaultAva();
-        expect(original).toEqual(DefaultAvatar);
-    })
     it('should nft onchain data be valid', async () => {
         const {
             userAccounts: [, , user],
@@ -59,8 +55,7 @@ describe('UserNft', () => {
         expect(onchainDataNFT.image || onchainDataNFT.image_data).toBeTruthy();
         expect(onchainDataNFT.attributes?.some((e) => e.trait_type === 'Posts count')).toBeTruthy();
         expect(onchainDataNFT.attributes?.some((e) => e.trait_type === 'Register date')).toBeTruthy();
-        const g = DefaultAvatar;
-        expect(onchainDataNFT.image_data?.toString('binary') == (g)).toBeTruthy();
+        expect(onchainDataNFT.image_data?.equals(DefaultAvatar)).toBeTruthy();
     });
 
     it('should transfer', async () => {

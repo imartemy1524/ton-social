@@ -20,7 +20,7 @@ export interface SocialMedia {
     masterOwner: SandboxContract<TreasuryContract>;
     master: SandboxContract<Master>;
 }
-export const DefaultAvatar = readFileSync(__dirname+'/../avatar.jpg', {encoding: 'binary'});
+export const DefaultAvatar = readFileSync(__dirname+'/../avatar.jpg');
 
 export async function deployMaster(): Promise<SocialMedia> {
     const blockchain = await Blockchain.create();
@@ -199,13 +199,13 @@ export function decodeNftDataOnchain(data: Cell): NftData {
         if(!realKey){
             console.warn('key not found', keyHash);
         }
-        let value: Buffer|string = Buffer.from(valueBuffer.content.toString('utf-8'), 'binary');
+        let value: Buffer|string = valueBuffer.content;
         if(realKey === 'attributes'){
-            let v = value!.toString();
+            let v = value!.toString('utf-8');
             value = JSON.parse(v);
         }
         else if(realKey != 'image_data'){
-            value = value!.toString();
+            value = value!.toString('utf-8');
         }
         //@ts-ignore
         realGoodObject[realKey! as unknown as 'image'] = value!;
