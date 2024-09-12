@@ -20,14 +20,14 @@ export interface SocialMedia {
     masterOwner: SandboxContract<TreasuryContract>;
     master: SandboxContract<Master>;
 }
-export const DefaultAvatar = readFileSync(__dirname+'/../avatar.jpg');
+export const DefaultAvatar = readFileSync(__dirname+'/../contracts/static/avatar.jpg');
 
 export async function deployMaster(): Promise<SocialMedia> {
     const blockchain = await Blockchain.create();
     const userWallets = await blockchain.createWallets(10);
     const [masterOwner] = await blockchain.createWallets(1);
     const master = blockchain.openContract(await Master.fromInit());
-    await master.send(masterOwner.getSender(), { value: toNano('0.2') }, { $$type: 'Deploy', queryId: 0n });
+    await master.send(masterOwner.getSender(), { value: toNano('0.6') }, { $$type: 'Deploy', queryId: 0n });
 
     let userAccounts: SandboxContract<User>[] = [];
     for (const userWallet of userWallets) {

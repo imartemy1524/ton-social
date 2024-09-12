@@ -99,7 +99,7 @@ inline fun buildData(content: map<Int, ElString>, asSnake: Bool): Cell{
     let ans: map<Int as uint256, Cell> = emptyMap();
     foreach(key, value in content){
         //
-        ans.set(key,nftTextToCell(value.value, asSnake));
+        ans.set(key, nftTextToCell(value.value, asSnake));
     }
     return beginCell().storeInt(0, 8).storeBool(true).storeRef(ans.asCell()!!).endCell()
     //    OnChainData{

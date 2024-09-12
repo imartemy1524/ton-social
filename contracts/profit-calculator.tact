@@ -24,12 +24,12 @@ message(0x312912F) ProfitMessagePongSubscribtion{
 }
 
 message DeployProfitCalculator{
-    excessTo: Address;
-
+    initData: StateInit;
+    body: Cell;
 }
 
 // Contract to calculate profit
-contract ProfitCalculator with Masterable{
+contract ProfitCalculator with Masterable, Exitable{
     override const storageReserve: Int = ton("0.02");
     counters: map<Int as uint8, Int as uint64>;
     master: Address;
@@ -40,7 +40,8 @@ contract ProfitCalculator with Masterable{
         self.counters.set(0, 0);
     }
     receive(deploy: DeployProfitCalculator) {
-        self.forward(deploy.excessTo, "ok".asComment(), false, null);
+        self.requireMaster();
+        self.forward(contractAddress(deploy.initData), deploy.body, true, deploy.initData);
     }
 
 
@@ -60,6 +61,10 @@ contract ProfitCalculator with Masterable{
                 action: m.action,
                 forwardPayload: m.forwardPayload
             }.toCell()
-        })
+        });
+    }
+    receive(m: Slice){
+        //ok, probably...???
+        self.exitWithoutSaving();
     }
 }

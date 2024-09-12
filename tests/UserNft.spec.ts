@@ -38,7 +38,9 @@ describe('UserNft', () => {
         expect(Object.keys(onchainDataCollection).length).toBeGreaterThan(0);
         expect(onchainDataCollection.name).toBeTruthy();
         expect(onchainDataCollection.description).toBeTruthy();
-        expect(onchainDataCollection.image).toBeTruthy();
+        expect(onchainDataCollection.image_data || onchainDataCollection.image).toBeTruthy();
+        const dataImage = await readFile(__dirname + '/../contracts/static/collection.jpg');
+        // expect(onchainDataCollection.image_data?.equals(dataImage)).toBeTruthy();
     });
     it('should nft onchain data be valid', async () => {
         const {

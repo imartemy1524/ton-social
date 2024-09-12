@@ -2,6 +2,16 @@ import "./nft-structs.tact";
 import "./metadata.tact";
 import "../utils/json.tact";
 
+inline fun setImage(data: map<Int, ElString>, avatar: String): map<Int, ElString>{
+    //starts with http
+    if(avatar.asSlice().preloadUint(32)== 0b01101000011101000111010001110000){
+        data.set(sha256("image"), ElString{ value: avatar});
+    } else {
+        data.set(sha256("image_data"), ElString{ value: avatar});
+    }
+    return data;
+}
+
 trait NftItem with Masterable, Ownable, IUser, Blockable{
     const ComputeFee: Int = ton("0.011");
     blocked: Bool;
@@ -104,9 +114,9 @@ trait NftCollection with Ownable, UserPerformable{
         let data: map<Int, ElString> = emptyMap();
         data.set(sha256("name"), ElString{
         value: self.CollectionName});
-        data.set(sha256("description"), ElString{
-        value: self.CollectionDescription});
-        data.set(sha256("image"), ElString{ value: self.LogoURL});
+        data.set(sha256("description"), ElString{ value: self.CollectionDescription});
+        data = setImage(data, self.LogoURL);
+//        data.set( sha256("image"), ElString{ value: self.LogoURL});
         data.set(sha256("marketplace"), ElString{
         value: self.MartketplaceURL});
         return CollectionData{
@@ -122,13 +132,8 @@ trait NftCollection with Ownable, UserPerformable{
         data.set(sha256("name"), ElString{
         value: content.buildNftName(index)});
         let avatar: String = content.avatar != null? content.avatar!!: self.getDefaultAvatar();
-        //starts with http
-        if(avatar.asSlice().preloadUint(32)== 0b01101000011101000111010001110000){
-            data.set(sha256("image"), ElString{ value: avatar});
-        } else {
-            data.set(sha256("image_data"), ElString{ value: avatar});
-        }
 
+        data = setImage(data, avatar);
         data.set(sha256("description"), ElString{
         value: content.buildDescription(index)});
         //TODO: fix later
