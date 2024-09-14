@@ -57,10 +57,8 @@ trait PostCommunicator with Ownable, Masterable, Blockable, AchievementRecieveab
     }
 
     receive(m: ExcessFromPost){
-        dump("Creating");
         //send post achievement
         self.checkPostsAchievements(true);
-        dump(self.receivedAchievements.toString());
     }
     get fun post(postId: Int): Address{
         let data: StateInit = initOf UserPost(self.master, self.userId, postId);

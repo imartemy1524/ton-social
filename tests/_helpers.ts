@@ -240,7 +240,7 @@ export async function createPost(
             text: textInitial,
         },
     );
-    printTransactionFees(transactions);
+    // printTransactionFees(transactions);
     expect(transactions).toHaveTransaction({
         from: wallet.address,
         to: account.address,

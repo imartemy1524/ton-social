@@ -48,8 +48,6 @@ trait AchievementRecieveable with IUser, Ownable{
         return false;
     }
     inline fun __sendAchievement(type: Int){
-        dump("send...");
-        dump(myAddress().toString());
         self.receivedAchievements |= (1 << (type-1));
         self.forward(
             self.achievementMinterAddress,
@@ -57,7 +55,6 @@ trait AchievementRecieveable with IUser, Ownable{
             true,
             null
         );
-        dump(self.receivedAchievements.toString());
     }
 
 //    receive("inc"){
@@ -65,7 +62,6 @@ trait AchievementRecieveable with IUser, Ownable{
 //    }
 
     bounced(m: bounced<ReceiveAchivement>){
-        dump("error");
 //        self.receivedAchievements = self.receivedAchievements & (~(1 << (m.achievementId-1)));
         self.forward(self.owner, "error".asComment(), false, null);
     }

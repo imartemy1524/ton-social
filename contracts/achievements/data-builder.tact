@@ -25,7 +25,7 @@ inline extends fun buildAttributesString(self: IndividualContentAchivement): Str
     let builderAttributes = createJsonArray()
     .appendObject(
         createJsonObject()
-            .appendString("trait_type", "Acitivity type")
+            .appendString("trait_type", "Activity type")
             .appendString("value", buildAchievementTypeForSvg(self.type))
     )
     .appendObject(
@@ -93,16 +93,16 @@ inline fun buildCountersTextForSvg(value: Int): String{
 }
 inline fun buildAchievementTypeForSvg(value: Int): String{
     if(value <= 0x10){
-        return "posts";
+        return "POSTS";
     }
     if(value <= 0x20){
-        return "likes";
+        return "LIKES";
     }
     if(value <= 0x30){
-        return "comment";
+        return "COMMENT";
     }
     if(value <= 0x40){
-        return "follower";
+        return "FOLLOWERS";
     }
     return "";
 }
