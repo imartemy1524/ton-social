@@ -19,10 +19,10 @@ message SetLikeInternal {
 }
 
 message SetLikeInternalNotification {
+    excessTo: Address;
     userId: Int as uint64;
     oldValue: LikeValue;
     newValue: LikeValue;
-    excessTo: Address;
 }
 message SetLikeSuccess{
     excessTo: Address;

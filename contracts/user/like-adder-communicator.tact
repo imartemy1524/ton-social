@@ -19,7 +19,7 @@ trait LikeAdderCommunicator with Masterable, Ownable, AchievementRecieveable{
     master: Address;
     owner: Address;
 
-    virtual const MinLikeFee: Int = ton("0.1");
+    virtual const MinLikeFee: Int = ton("0.2");
     //Adds like to (Contract(m.to) instanceof LikeableObject)
     receive(m: UserAddLike){
         self.requireOwner();

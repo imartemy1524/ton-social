@@ -21,7 +21,8 @@ export interface SocialMedia {
     masterOwner: SandboxContract<TreasuryContract>;
     master: SandboxContract<Master>;
 }
-export const DefaultAvatar = readFileSync(__dirname+'/../contracts/static/avatar.jpg');
+
+export const DefaultAvatar = readFileSync(__dirname + '/../contracts/static/avatar.jpg');
 
 export async function deployMaster(): Promise<SocialMedia> {
     const blockchain = await Blockchain.create();
@@ -53,17 +54,17 @@ export async function deployMaster(): Promise<SocialMedia> {
     return { blockchain, userWallets, userAccounts, master, masterOwner, superMaster: master };
 }
 
-
-
 //parsing onchain data in NFT
 //reference: https://stackblitz.com/edit/ton-onchain-nft-parser?file=src%2Fmain.ts
 //https://docs.ton.org/develop/dapps/asset-processing/metadata
 interface ChunkDictValue {
     content: Buffer;
 }
+
 interface NFTDictValue {
     content: Buffer;
 }
+
 class NftOnChainDataParserClass {
     flattenSnakeCell(cell: Cell) {
         let c: Cell | null = cell;
@@ -153,16 +154,18 @@ class NftOnChainDataParserClass {
 type IDataAttribute = {
     trait_type: string;
     value: string;
-}
-interface NftData{
+};
+
+interface NftData {
     name?: string;
     description?: string;
     image?: string;
     image_data?: Buffer;
     marketplace?: string;
 
-    attributes?: IDataAttribute[]
+    attributes?: IDataAttribute[];
 }
+
 export function decodeNftDataOnchain(data: Cell): NftData {
     const NftOnChainDataParser = new NftOnChainDataParserClass();
     const NFTDictValueSerializer = {
@@ -191,21 +194,23 @@ export function decodeNftDataOnchain(data: Cell): NftData {
         Array.from(ans).map(([k, v]) => [BigInt('0x' + k.toString('hex')), v]),
     );
     const keys = new Map<bigint, string>(
-        ['image', 'name', 'description', 'image', 'marketplace', 'image_data', 'attributes'].map((key) => [sha256(key), key]),
+        ['image', 'name', 'description', 'image', 'marketplace', 'image_data', 'attributes'].map((key) => [
+            sha256(key),
+            key,
+        ]),
     );
 
     const realGoodObject: NftData = {};
     for (const [keyHash, valueBuffer] of ansMapped) {
         const realKey: string = keys.get(keyHash)!;
-        if(!realKey){
+        if (!realKey) {
             console.warn('key not found', keyHash);
         }
-        let value: Buffer|string = valueBuffer.content;
-        if(realKey === 'attributes'){
+        let value: Buffer | string = valueBuffer.content;
+        if (realKey === 'attributes') {
             let v = value!.toString('utf-8');
             value = JSON.parse(v);
-        }
-        else if(realKey != 'image_data'){
+        } else if (realKey != 'image_data') {
             value = value!.toString('utf-8');
         }
         //@ts-ignore
@@ -217,7 +222,6 @@ export function decodeNftDataOnchain(data: Cell): NftData {
 export function sha256(s: string): bigint {
     return BigInt('0x' + sha256_sync(s).toString('hex'));
 }
-
 
 export async function createPost(
     {

@@ -75,7 +75,7 @@ describe('Post', () => {
         for (let i = 0; i < 10; i++) {
             const { transactions } = await data.userAccounts[i]!.send(
                 data.userWallets[i]!.getSender(),
-                { value: toNano('0.3') },
+                { value: toNano('0.35') },
                 {
                     $$type: 'UserAddLike',
                     to: post.address,
@@ -98,7 +98,7 @@ describe('Post', () => {
         for (let i = 0; i < 10; i++) {
             const { transactions } = await data.userAccounts[i]!.send(
                 data.userWallets[i]!.getSender(),
-                { value: toNano('0.1') },
+                { value: toNano('0.35') },
                 {
                     $$type: 'UserAddLike',
                     to: post.address,
@@ -154,7 +154,7 @@ describe('Post', () => {
         for (let i = 0; i < 10; i++) {
             const { transactions } = await data.userAccounts[i]!.send(
                 data.userWallets[0]!.getSender(),
-                { value: toNano('0.1') },
+                { value: toNano('0.35') },
                 {
                     $$type: 'UserAddLike',
                     to: post.address,
@@ -170,7 +170,7 @@ describe('Post', () => {
         expect(likes.get(1)).toBe(1n);
         await data.userAccounts[0]!.send(
             data.userWallets[0]!.getSender(),
-            { value: toNano('0.1') },
+            { value: toNano('0.35') },
             {
                 $$type: 'UserAddLike',
                 to: post.address,
@@ -240,7 +240,7 @@ describe('Post', () => {
         const { postId } = await post.getData();
         await data.userAccounts[0]!.send(
             data.userWallets[0]!.getSender(),
-            { value: toNano('0.1') },
+            { value: toNano('0.35') },
             {
                 $$type: 'UserUpdateTextPost',
                 postId,
@@ -268,7 +268,7 @@ describe('Post', () => {
                 let oldChildCount = await ownerObject.getChildren();
                 const { transactions } = await data.userAccounts[child]!.send(
                     data.userWallets[child]!.getSender(),
-                    { value: toNano('0.1') },
+                    { value: toNano('0.35') },
                     {
                         $$type: 'ExternalAddComment',
                         parentAddress: ownerObject.address,

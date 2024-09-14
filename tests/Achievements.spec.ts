@@ -1,7 +1,8 @@
-import { SandboxContract } from '@ton/sandbox';
+import { printTransactionFees, SandboxContract } from '@ton/sandbox';
 import '@ton/test-utils';
 import { Achivement, AchivementMaster } from '../wrappers/Achievement';
 import { SocialMedia, deployMaster, createPost, decodeNftDataOnchain, DefaultAvatar } from './_helpers';
+import { toNano } from '@ton/core';
 
 describe('Achievement', () => {
     let data: SocialMedia;
@@ -61,6 +62,57 @@ describe('Achievement', () => {
         );
         expect(newData2.receivedAchievements).toBe(newData.receivedAchievements);
     });
+    it('should create every 1 10 100 posts', async () => {
+        let old: bigint = 0n;
+        for (let i = 1; i < 102; i += 1) {
+            await createPost(
+                {
+                    account: data.userAccounts[0]!,
+                    wallet: data.userWallets[0]!,
+                    blockchain: data.blockchain,
+                },
+                { text: 'Hello, world!' },
+            );
+            const { next_item_index: newIndex } = await achievementContract.getGetCollectionData();
+            const newData = await data.userAccounts[0]!.getData();
+            if (i === 1 || i === 10 || i === 100 || i === 1000) {
+                expect(newData.receivedAchievements).toBeGreaterThan(old);
+            } else {
+                expect(newData.receivedAchievements).toBe(old);
+            }
+
+            old = newData.receivedAchievements;
+        }
+    });
+    it('should create achievement after like', async () => {
+        const post = await createPost(
+            {
+                account: data.userAccounts[5]!,
+                wallet: data.userWallets[5]!,
+                blockchain: data.blockchain,
+            },
+            { text: 'Hello, everybody, lets like/dislike this post!' },
+        );
+        const { postId } = await post.getData();
+        // add 10 likes/dislikes (4 likes - 0,3,6,9, 6 dislikes - 1,2,4,5,7,8)
+        for (let i = 0; i < 10; i++) {
+            const { receivedAchievements: oldAchievementsCount } = await data.userAccounts[i].getData();
+            const { transactions } = await data.userAccounts[i]!.send(
+                data.userWallets[i]!.getSender(),
+                { value: toNano('0.3') },
+                {
+                    $$type: 'UserAddLike',
+                    to: post.address,
+                    isLike: {
+                        $$type: 'LikeValue',
+                        char: BigInt(i + 1),
+                    },
+                },
+            );
+            const { receivedAchievements } = await data.userAccounts[i].getData();
+            expect(receivedAchievements).toBeGreaterThan(oldAchievementsCount);
+        }
+    });
     it('should achievement data be valid', async () => {
         await createPost(
             {
@@ -85,28 +137,5 @@ describe('Achievement', () => {
         expect(onchainDataNFT.attributes?.some((e) => e.trait_type === 'Amount')).toBeTruthy();
 
         let SVG = onchainDataNFT.image_data!.toString('utf-8');
-        console.log('SVG onchain image: ', SVG);
-    });
-    it('should create every 000', async () => {
-        let old: bigint = 0n;
-        for (let i = 1; i < 102; i += 1) {
-            await createPost(
-                {
-                    account: data.userAccounts[0]!,
-                    wallet: data.userWallets[0]!,
-                    blockchain: data.blockchain,
-                },
-                { text: 'Hello, world!' },
-            );
-            const { next_item_index: newIndex } = await achievementContract.getGetCollectionData();
-            const newData = await data.userAccounts[0]!.getData();
-            if (i === 1 || i === 10 || i === 100 || i === 1000) {
-                expect(newData.receivedAchievements).toBeGreaterThan(old);
-            } else {
-                expect(newData.receivedAchievements).toBe(old);
-            }
-
-            old = newData.receivedAchievements;
-        }
     });
 });
