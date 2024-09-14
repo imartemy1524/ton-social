@@ -99,7 +99,8 @@ trait AbstractAchivementSbt with Masterable, Exitable{
     }
 
     get fun get_authority_address(): Address? {
-        return self.collectionAddress();
+        let ans = self.collectionAddress();
+        return ans;
     }
     get fun get_revoked_time(): Int {
         return 0;

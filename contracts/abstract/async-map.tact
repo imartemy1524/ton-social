@@ -100,7 +100,8 @@ trait AsyncMap {
     }
 
     get fun child_address(key: Cell): Address{
-        return self.addressOf(key);
+        let ans = self.addressOf(key);
+        return ans;
     }
 }
 

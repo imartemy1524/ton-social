@@ -164,7 +164,8 @@ trait SbtItem with Masterable, UserOwnable, Exitable, Blockable{
 
 
     inline fun getAuthority(): Address{
-        return self.userContractAddress(self.userToId);
+        let ans = self.userContractAddress(self.userToId);
+        return ans;
     }
     get fun get_authority_address(): Address? {
         return self.getAuthority();
