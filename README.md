@@ -27,10 +27,11 @@ Now, what **account** can do?
 
 ### Features
 
--  Users can create accounts (many accounts) from one wallet, and use this account to communicate with other users and objects.
--  Users can create posts, edit them, like them and comment them.
--  Users can answer other comments, like them and edit.
--  TODO: Users can have unique nickname in the system and can be found by this nickname.
+- [x] Users can create accounts (many accounts) from one wallet, and use this account to communicate with other users and objects.
+- [x] Users can create posts, edit them, like them and comment them.
+- [x] Users can answer other comments, like them and edit.
+- [x] Users receive SBT-achievements, when they done some actions (add 1,10,100,... likes, posts, subscriptions, comments)
+- [ ]  Users can have unique nickname in the system and can be found by this nickname.
 
 
 

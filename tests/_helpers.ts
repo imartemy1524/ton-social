@@ -11,6 +11,7 @@ import { beginCell, BitBuilder, BitReader, Builder, Cell, Dictionary, Slice, toN
 import { sha256_sync } from '@ton/crypto';
 import { readFile } from 'node:fs/promises';
 import { readFileSync } from 'fs';
+import { UserPost } from '../build/Master/tact_UserPost';
 
 export interface SocialMedia {
     blockchain: Blockchain;
@@ -215,4 +216,42 @@ export function decodeNftDataOnchain(data: Cell): NftData {
 
 export function sha256(s: string): bigint {
     return BigInt('0x' + sha256_sync(s).toString('hex'));
+}
+
+
+export async function createPost(
+    {
+        account,
+        wallet,
+        blockchain,
+    }: {
+        account: SandboxContract<User>;
+        wallet: SandboxContract<TreasuryContract>;
+        blockchain: Blockchain;
+    },
+    { text: textInitial }: { text: string },
+) {
+    const { postsCount: prevPostsCount } = await account.getData();
+    const { transactions } = await account.send(
+        wallet.getSender(),
+        { value: toNano('0.35') },
+        {
+            $$type: 'UserCreatePost',
+            text: textInitial,
+        },
+    );
+    printTransactionFees(transactions);
+    expect(transactions).toHaveTransaction({
+        from: wallet.address,
+        to: account.address,
+        success: true,
+    });
+    const { postsCount } = await account.getData();
+    expect(postsCount).toBe(prevPostsCount + 1n);
+    const post = blockchain.openContract(UserPost.fromAddress(await account.getPost(postsCount)));
+    const { likes, text, ownerUserId } = await post.getData();
+    expect(text).toBe(textInitial);
+    expect(likes.size).toBe(0);
+    expect(ownerUserId).toBe(await account.getData().then((e) => e.userId));
+    return post;
 }

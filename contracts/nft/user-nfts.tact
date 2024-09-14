@@ -20,6 +20,7 @@ trait NftItem with Masterable, Ownable, IUser, Blockable{
     master: Address;
     owner: Address;
     postsCount: Int;
+    likesCount: Int;
     registerDate: Int;
     avatar: String?;
     receive(msg: GetStaticData){
@@ -87,7 +88,8 @@ trait NftItem with Masterable, Ownable, IUser, Blockable{
                 avatar: self.avatar,
                 nickname: self.nickname != null? self.nickname: null,
                 postsCount: self.postsCount,
-                registerDate: self.registerDate
+                registerDate: self.registerDate,
+                likesCount: self.likesCount
             }.toCell()
         };
     }

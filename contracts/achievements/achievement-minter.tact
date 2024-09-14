@@ -1,8 +1,9 @@
 import "./types.tact";
 
-message RecieveAchivement{
-    achivementId: Int as uint8;
+message ReceiveAchivement{
+    achievementId: Int as uint8;
     userId: Int as uint64;
+    excessTo: Address;
 }
 
 
@@ -13,12 +14,13 @@ trait AchivementsMinter with UserPerformable {
         return self.master;
     }
 
-    receive(achivement: RecieveAchivement){
-        self.requireSenderIsUser(achivement.userId);
-        require(context().value >= ton("0.1"), "Not enough value to mint achivement");
+    receive(achivement: ReceiveAchivement){
+        let addr = self.userContractAddress(achivement.userId);
+        require(sender() == addr, "Invalid sender");
+        require(context().value >= ton("0.12"), "Not enough value to mint achivement");
         self.lastSbtId += 1;
-        self.mint(achivement.userId, achivement.achivementId);
+        self.mint(addr, achivement.achievementId, achivement.excessTo);
     }
 
-    abstract inline fun mint(userId: Int, achivementId: Int);
+    abstract inline fun mint(owner: Address, achievementId: Int, excessTo: Address);
 }

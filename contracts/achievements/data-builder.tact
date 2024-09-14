@@ -17,7 +17,7 @@ inline extends fun buildNftName(self: IndividualContentAchivement, index: Int): 
 inline extends fun buildDescription(self: IndividualContentAchivement, index: Int): String{
     let ans = beginString()
         .concat("This unique SBT-achievement #").concat(index.toString())
-        .concat(" was granted to user ID").concat(self.userId.toString())
+        .concat(" was granted to user ").concat(self.owner.toString())
         .concat(" for activity in NetoTon: ").concat(self.activityType(self.type % 0x10));
     return ans.toString();
 }

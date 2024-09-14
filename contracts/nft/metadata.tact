@@ -4,6 +4,7 @@ struct IndividualContent {
     nickname: String?;
     postsCount: Int as uint64;
     registerDate: Int as uint64;
+    likesCount: Int as uint64;
 }
 
 
@@ -31,16 +32,21 @@ extends fun buildDescription(self: IndividualContent, index: Int): String {
 }
 extends fun buildAttributesString(self: IndividualContent): String {
     let builderAttributes = createJsonArray()
-    .appendObject(
-        createJsonObject()
-            .appendString("trait_type", "Posts count")
-            .appendString("value", self.postsCount.toString())
-    )
-    .appendObject(
-        createJsonObject()
-            .appendString("trait_type", "Register date")
-            .appendString("value", self.registerDate.asUnixTimeDateString("/"))
-    );
+        .appendObject(
+            createJsonObject()
+                .appendString("trait_type", "Posts count")
+                .appendString("value", self.postsCount.toString())
+        )
+        .appendObject(
+            createJsonObject()
+                .appendString("trait_type", "Register date")
+                .appendString("value", self.registerDate.asUnixTimeDateString("/"))
+        )
+        .appendObject(
+            createJsonObject()
+                .appendString("trait_type", "Likes count")
+                .appendString("value", self.likesCount.toString())
+        );
     return builderAttributes.toString();
 }
 

@@ -1,47 +1,9 @@
-import { Blockchain, printTransactionFees, SandboxContract, TreasuryContract } from '@ton/sandbox';
 import { Address, fromNano, toNano } from '@ton/core';
 import '@ton/test-utils';
-import { UserPost } from '../wrappers/UserPost';
-import { User } from '../build/Master/tact_User';
 import { UserLike } from '../wrappers/UserLike';
 import { Comment } from '../build/Master/tact_Comment';
-import { SocialMedia, deployMaster } from './_helpers';
+import { SocialMedia, deployMaster, createPost } from './_helpers';
 type Tree = {value: Address, children: Tree[]};
-async function createPost(
-    {
-        account,
-        wallet,
-        blockchain,
-    }: {
-        account: SandboxContract<User>;
-        wallet: SandboxContract<TreasuryContract>;
-        blockchain: Blockchain;
-    },
-    { text: textInitial }: { text: string },
-) {
-    const { postsCount: prevPostsCount } = await account.getData();
-    const { transactions } = await account.send(
-        wallet.getSender(),
-        { value: toNano('0.1') },
-        {
-            $$type: 'UserCreatePost',
-            text: textInitial,
-        },
-    );
-    expect(transactions).toHaveTransaction({
-        from: wallet.address,
-        to: account.address,
-        success: true,
-    });
-    const { postsCount } = await account.getData();
-    expect(postsCount).toBe(prevPostsCount + 1n);
-    const post = blockchain.openContract(UserPost.fromAddress(await account.getPost(postsCount)));
-    const { likes, text, ownerUserId } = await post.getData();
-    expect(text).toBe(textInitial);
-    expect(likes.size).toBe(0);
-    expect(ownerUserId).toBe(await account.getData().then((e) => e.userId));
-    return post;
-}
 
 describe('Post', () => {
     let data: SocialMedia;

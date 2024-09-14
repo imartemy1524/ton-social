@@ -1,23 +1,30 @@
-message InitAchievement{
-    ownerUserId: Int as uint64;
+message MinAchievementInternal{
+//    ownerUserId: Int as uint64;
     type: Int as uint8;
+    excessTo: Address;
+    owner: Address;
 }
 contract Achivement with AbstractAchivementSbt{
     master: Address;
     index: Int as uint64;
     type: Int as uint8 = 0;
-    ownerUserId: Int as uint64 = 0;
+    owner: Address? = null;
+    _collectionAddress: Address;
+    override const storageReserve: Int = ton("0.01");
 
-    init(masterAddress: Address, index: Int){
+    init(masterAddress: Address, collectionAddress: Address, index: Int){
         self.master = masterAddress;
         self.index = index;
+        self._collectionAddress = collectionAddress;
+        self.owner = null;
     }
 
-    receive(msg: InitAchievement){
+    receive(msg: MinAchievementInternal){
         self.requireCollectionSender();
-        require(self.ownerUserId == 0, "Already initiated");
-        self.ownerUserId = msg.ownerUserId;
+        require(self.owner == null, "Already initiated");
+        self.owner = msg.owner;
         self.type = msg.type;
+        self.forward(msg.excessTo, "New achievement recieved!".asComment(), false, null);
     }
 
 
@@ -27,8 +34,7 @@ contract Achivement with AbstractAchivementSbt{
     }
 
     override fun collectionAddress(): Address{
-        let init: StateInit = initOf AchivementMaster(self.master);
-        return contractAddress(init);
+        return self._collectionAddress;
     }
 
 }

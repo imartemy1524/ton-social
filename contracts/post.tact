@@ -19,6 +19,9 @@ struct PostData{
     master: Address;
     date: Int as uint64;
 }
+message ExcessFromPost{
+    success: Bool;
+}
 //sources of user post contract. Only user can communicate with this contract through his own contract (User)
 contract UserPost with LikeableObject, Excessable, Commentable, UserOwnable {
     override const storageReserve: Int = ton("0.02");
@@ -56,7 +59,7 @@ contract UserPost with LikeableObject, Excessable, Commentable, UserOwnable {
         if(self.date == 0){
             self.date = now();
         }
-        self.excess(m.excessTo, "ok");
+        self.forward(m.excessTo, ExcessFromPost{success: true}.toCell(), false, null);
     }
 
     get fun data(): PostData{

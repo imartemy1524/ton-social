@@ -11,6 +11,7 @@ import "./subscribtion.tact";
 message InitUserInternal{
     owner: Address;
     excessTo: Address;
+    achievementAddress: Address;
 }
 
 // getters
@@ -20,6 +21,8 @@ struct UserData{
     owner: Address;
     blocked: Bool;
     postsCount: Int as uint64;
+    likesCount: Int ;
+    receivedAchievements: Int;
 }
 
 
@@ -34,10 +37,14 @@ contract User with OwnableTransferable, Excessable, BlockableByMaster, PostCommu
     nickname: String? = null;
     avatar: String? = null;
     //variables from traits
-    blocked: Bool;
+    blocked: Bool = false;
     master: Address;
     postsCount: Int as uint64 = 0;
-    registerDate: Int as uint64;
+    likesCount: Int as uint64 = 0;
+    commentsCount: Int as uint64 = 0;
+    registerDate: Int as uint64 = 0;
+    receivedAchievements: Int as uint256 = 0x0;
+    achievementMinterAddress: Address;
     //user owner address
     owner: Address;
     //user id
@@ -46,13 +53,13 @@ contract User with OwnableTransferable, Excessable, BlockableByMaster, PostCommu
         self.master = master;
         self.userId = userId;
         self.owner = NullAddress;
-        self.blocked = false;
-        self.registerDate = 0;
+        self.achievementMinterAddress = NullAddress;
     }
     receive(m: InitUserInternal){
         self.requireMaster();
         self.owner = m.owner;
         self.registerDate = now();
+        self.achievementMinterAddress = m.achievementAddress;
         self.excess(m.excessTo, beginString().concat(self.userId.toString()).concat(" initialized").toString());
     }
 
@@ -62,7 +69,9 @@ contract User with OwnableTransferable, Excessable, BlockableByMaster, PostCommu
             userId: self.userId,
             owner: self.owner,
             blocked: self.blocked,
-            postsCount: self.postsCount
+            postsCount: self.postsCount,
+            likesCount: self.likesCount,
+            receivedAchievements: self.receivedAchievements
         };
     }
 
@@ -75,7 +84,8 @@ contract User with OwnableTransferable, Excessable, BlockableByMaster, PostCommu
             avatar: self.avatar,
             nickname: self.nickname != null? self.nickname: null,
             postsCount: self.postsCount,
-            registerDate: self.registerDate
+            registerDate: self.registerDate,
+            likesCount: self.likesCount,
         }.toCell()
     }
 

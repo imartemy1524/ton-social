@@ -56,7 +56,8 @@ contract Master with OwnableTransferable, MasterUserBans, NftCollection{
             InitUserInternal{
                 owner: sender(),
                 // we take the excess as comission
-                excessTo: self.owner
+                excessTo: self.owner,
+                achievementAddress: contractAddress(self.getAchievementData())
             }.toCell(),
             true,
             user

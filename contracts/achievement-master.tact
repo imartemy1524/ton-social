@@ -19,13 +19,13 @@ contract AchivementMaster with AchivementsMinter, AchievementCollection, Blockab
         self.master = master;
     }
 
-    override inline fun mint(userId: Int, achivementId: Int){
-        let ach = initOf Achivement(self.master, self.lastSbtId);
-        self.forward(contractAddress(ach), InitAchievement{ownerUserId: userId, type: achivementId}.toCell(), false, ach)
+    override inline fun mint(owner: Address, achievementId: Int, excessTo: Address){
+        let ach = initOf Achivement(self.master, myAddress(), self.lastSbtId);
+        self.forward(contractAddress(ach), MinAchievementInternal{owner, type: achievementId, excessTo}.toCell(), false, ach)
     }
 
     override inline fun at(id: Int): Address{
-        return contractAddress(initOf Achivement(self.master, id));
+        return contractAddress(initOf Achivement(self.master, myAddress(), id));
     }
     receive(m: MintAchievementMessage){
         self.requireMaster();

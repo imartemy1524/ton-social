@@ -28,7 +28,7 @@ message SetLikeSuccess{
     excessTo: Address;
     newValue: LikeValue;
 }
-
+message ExcessFromLike{success: Bool;}
 
 
 // Main trait for likeable objects (which can be liked).
@@ -119,7 +119,7 @@ contract UserLike with Blockable, UserOwnable{
         self.value = m.newValue;
         self.blocked = false;
         self.lastEdit = now();
-        self.excess(m.excessTo, "ok");
+        self.forward(m.excessTo, ExcessFromLike{success: true}.toCell(), false, null);
     }
     bounced(m: bounced<SetLikeInternalNotification>){
         //Very sad, you're baka, the contract doesn't exists, or you've passed invalid address, or contract doesn't accept likes.

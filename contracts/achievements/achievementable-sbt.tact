@@ -1,16 +1,22 @@
 import "../nft/subscribtion-sbts.tact";
 
 struct IndividualContentAchivement{
-    userId: Int as uint64;
+//    userId: Int as uint64;
     type: Int as uint8;
+    owner: Address;
 }
 
 
-trait AbstractAchivementSbt with Masterable, UserOwnable, Exitable{
-    ownerUserId: Int;
+trait AbstractAchivementSbt with Masterable, Exitable{
+//    ownerUserId: Int;
+    owner: Address?;
     type: Int;
     master: Address;
     index: Int;
+
+    fun requireOwner() {
+        nativeThrowUnless(132, self.owner != null && sender() == self.owner!!);
+    }
 
     abstract fun collectionAddress(): Address;
     receive(msg: GetStaticData){
@@ -21,7 +27,7 @@ trait AbstractAchivementSbt with Masterable, UserOwnable, Exitable{
         throw(132);
     }
     inline fun requireNftInitialized(){
-        require(self.ownerUserId != 0, "Not Initiated");
+        require(self.owner != null, "Not Initiated");
     }
     receive(msg: ProveOwnership) {
         self.requireOwner();
@@ -31,14 +37,14 @@ trait AbstractAchivementSbt with Masterable, UserOwnable, Exitable{
             content = self.getContent();
         }
         self.forward(
-        msg.dest,
-        OwnershipProof {
-        query_id: msg.query_id,
-        item_id: self.ownerUserId,
-        owner: self.userContractAddress(self.ownerUserId),
-        data: msg.forward_payload,
-        revoked_at: 0,
-        content
+            msg.dest,
+            OwnershipProof {
+            query_id: msg.query_id,
+            item_id: self.index,
+            owner: self.owner!!,
+            data: msg.forward_payload,
+            revoked_at: 0,
+            content
         }.toCell(),
         true, null
         );
@@ -54,9 +60,9 @@ trait AbstractAchivementSbt with Masterable, UserOwnable, Exitable{
         msg.dest,
         OwnerInfo {
         query_id: msg.query_id,
-        item_id: self.ownerUserId,
+        item_id: self.index,
         initiator: sender(),
-        owner: self.userContractAddress(self.ownerUserId),
+        owner: self.owner!!,
         data: msg.forward_payload,
         revoked_at: 0,
         content
@@ -67,7 +73,7 @@ trait AbstractAchivementSbt with Masterable, UserOwnable, Exitable{
         self.exitWithoutSaving();
     }
     bounced(msg: bounced<OwnershipProof>) {
-        self.forward(self.userContractAddress(self.ownerUserId), OwnershipProofBounced{
+        self.forward(self.owner!!, OwnershipProofBounced{
         query_id: msg.query_id}.toCell(), false, null);
         self.exitWithoutSaving();
     }
@@ -76,14 +82,13 @@ trait AbstractAchivementSbt with Masterable, UserOwnable, Exitable{
         self.requireNftInitialized();
         self.requireOwner();
         send(SendParameters{
-        value: 0,
-        mode: SendRemainingBalance | SendDestroyIfZero,
-        to: self.userContractAddress(self.ownerUserId),
-        bounce: false,
-        body: Excesses{
-        query_id: msg.query_id}.toCell()
+            value: 0,
+            mode: SendRemainingBalance | SendDestroyIfZero,
+            to: self.owner!!,
+            bounce: false,
+            body: Excesses{ query_id: msg.query_id}.toCell()
         });
-        self.ownerUserId = 0;
+        self.owner = null;
     }
 
     //revoke subscribtion
@@ -102,17 +107,17 @@ trait AbstractAchivementSbt with Masterable, UserOwnable, Exitable{
 
     get fun get_nft_data(): GetNftData {
         return GetNftData{
-        is_initialized: self.ownerUserId != 0,
-        index: self.index,
-        collection_address: self.collectionAddress(),
-        owner_address: self.ownerUserId != 0 ? self.userContractAddress(self.ownerUserId) : NullAddress,
-        individual_content: self.getContent()
+            is_initialized: self.owner != null,
+            index: self.index,
+            collection_address: self.collectionAddress(),
+            owner_address: self.owner!!,
+            individual_content: self.getContent()
         };
     }
     inline fun getContent(): Cell{
         return IndividualContentAchivement{
-        userId: self.ownerUserId,
-        type: self.type
+            owner: self.owner!!,
+            type: self.type
         }.toCell()
     }
 }
