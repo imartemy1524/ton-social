@@ -25,6 +25,7 @@ trait SubscriptionCommunicator with IUser, Ownable, UserPerformable, ProfitCommu
     // wallet -> (owner user contract) -> (subscription user contract) (reserves amount) -> (subscription contract) -> (global profit contract) -> excess
     receive(m: ExternalSubscribeToUser){
         self.requireOwner();
+        require(m.subscribeToUserId != self.userId, "can't subscribe to yourself");
         require(context().value >= self.minSubscriptionFee, "not enough funds to subscribe");
         self.forward(
             self.userContractAddress(m.subscribeToUserId),
