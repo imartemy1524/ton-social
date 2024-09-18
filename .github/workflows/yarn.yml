@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+
+jobs:
+  build:
+    name: Test yarn
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set Node.js 22.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22.x
+
+      - name: Run install
+        uses: borales/actions-yarn@v4
+        with:
+          cmd: install # will run `yarn install` command
+      - name: Polyfill
+        uses: borales/actions-yarn@v4
+        with:
+          cmd: polyfill # will run `yarn build:prod` command
+      - name: Build contracts
+        uses: borales/actions-yarn@v4
+        with:
+          cmd: build # will run `yarn test` command
+      - name: Test contracts
+        uses: borales/actions-yarn@v4
+        with:
+          cmd: test # will run `yarn test` command
+
