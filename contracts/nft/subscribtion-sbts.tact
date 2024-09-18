@@ -66,7 +66,6 @@ struct SubscribtionData{
     level: Int as uint8;
     paymentPeriod: Int as uint64;
     paymentAmount: Int as coins;
-    cacelationFee: Int as coins;
 }
 struct IndividualContentSBT{
     data: SubscribtionData?;
@@ -149,7 +148,13 @@ trait SbtItem with Masterable, UserOwnable, Exitable, Blockable{
         self.requireNotBlocked();
         require(self.isNftInitialized(), "Not Initiated");
         self.requireOwner();
-        self.releaseFunds(msg.query_id, true);
+        send(SendParameters{
+            to: self.userContractAddress(self.ownerUserId),
+            value: 0,
+            bounce: false,
+            mode: SendRemainingBalance | SendDestroyIfZero,
+            body: TakeExcess{query_id: msg.query_id}.toCell()
+        });
     }
 
     //revoke subscribtion
@@ -158,7 +163,7 @@ trait SbtItem with Masterable, UserOwnable, Exitable, Blockable{
         self.requireNotBlocked();
         self.requireSenderIsUser(self.userToId);
         require(self.revokedAt == 0, "Already revoked");
-        self.releaseFunds(msg.query_id, true);
+//        self.releaseFunds(msg.query_id, true);
         self.revokedAt = now();
     }
 
@@ -192,6 +197,6 @@ trait SbtItem with Masterable, UserOwnable, Exitable, Blockable{
     }
 
     abstract inline fun isNftInitialized(): Bool;
-    abstract inline fun releaseFunds(queryId: Int, isExit: Bool): Int;
+//    abstract inline fun releaseFunds(queryId: Int, isExit: Bool): Int;
 }
 

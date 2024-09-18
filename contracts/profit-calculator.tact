@@ -1,35 +1,21 @@
 const PROFIT_SUBSCRIBTION: Int = 1;
-
-message(0x112912F) ProfitMessage{
+message(0x77777777) ProfitMessageSubscribtion{
     //PROFIT_* const
     action: Int as uint8;
     keepAmount: Int as coins;
-    forwardPayload: Slice as remaining;
+    subscriptionFromUserId: Int as uint64;
+    subscriptionToUserId: Int as uint64;
 }
-message(0x112912F) ProfitMessageSubscribtion{
-    //PROFIT_* const
-    action: Int as uint8;
-    keepAmount: Int as coins;
-    destroy: Bool;
+message ExcessFromProfitSubscription{
+    success: Bool
 }
-message(0x212912F) ProfitMessagePong{
-    //PROFIT_* const
-    action: Int as uint8;
-    forwardPayload: Slice as remaining;
-}
-message(0x312912F) ProfitMessagePongSubscribtion{
-    //PROFIT_* const
-    action: Int as uint8;
-    destroy: Bool;
-}
-
 message DeployProfitCalculator{
     initData: StateInit;
     body: Cell;
 }
 
 // Contract to calculate profit
-contract ProfitCalculator with Masterable, Exitable{
+contract ProfitCalculator with Masterable, Exitable, UserPerformable{
     override const storageReserve: Int = ton("0.02");
     counters: map<Int as uint8, Int as uint64>;
     master: Address;
@@ -45,26 +31,26 @@ contract ProfitCalculator with Masterable, Exitable{
     }
 
 
-    receive(m: ProfitMessage){
-        if(m.action != PROFIT_SUBSCRIBTION && m.action != 0){
-            throw(1);
-        }
+    receive(m: ProfitMessageSubscribtion){
+        let fromSubscription = initOf Subscription(self.master, m.subscriptionFromUserId, m.subscriptionToUserId);
+        require(sender() == contractAddress(fromSubscription), "only subscription contract can send profit message");
         self.counters.set(m.action, self.counters.get(PROFIT_SUBSCRIBTION)!! + 1);
         //reserver keepAmount and pong message back
-        nativeReserve(m.keepAmount + myBalance(), ReserveExact|ReserveAddOriginalBalance);
+        nativeReserve(m.keepAmount, ReserveExact | ReserveAddOriginalBalance);
         send(SendParameters{
-            to: sender(),
+            to: self.userContractAddress(m.subscriptionFromUserId),
             value: 0,
             bounce: false,
-            mode: SendRemainingValue|SendIgnoreErrors,
-            body: ProfitMessagePong{
-                action: m.action,
-                forwardPayload: m.forwardPayload
-            }.toCell()
+            mode: SendRemainingBalance | SendIgnoreErrors,
+            body: ExcessFromProfitSubscription{success: true}.toCell()
         });
     }
     receive(m: Slice){
         //ok, probably...???
         self.exitWithoutSaving();
     }
+    override fun getMasterAddress(): Address{
+        return self.master;
+    }
+
 }

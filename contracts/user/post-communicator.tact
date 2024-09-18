@@ -8,7 +8,7 @@ message UserCreatePost{
 }
 
 //trait, that allows object to create posts, like it, change post text
-trait PostCommunicator with Ownable, Masterable, Blockable, AchievementRecieveable, Exitable{
+trait PostCommunicator with Ownable, Masterable, Blockable, AchievementRecieveablePost, Exitable{
     virtual const MinPostFee: Int = ton("0.2");
 
     //from achievements minter

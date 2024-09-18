@@ -5,14 +5,12 @@ message UserAddLike{
 }
 
 
-trait LikeAdderCommunicator with Masterable, Ownable, AchievementRecieveable{
+trait LikeAdderCommunicator with Masterable, Ownable, AchievementRecieveableLikes{
     //fields from AchievemenetRecieveable
     nickname: String?;
     userId: Int;
-    postsCount: Int;
     receivedAchievements: Int;
     achievementMinterAddress: Address;
-    commentsCount: Int;
 
     //own fields
     likesCount: Int;

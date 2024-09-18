@@ -1,0 +1,3 @@
+trait ProfitCommunicator{
+    profitAddress: Address;
+}

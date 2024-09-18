@@ -10,12 +10,10 @@ message ExternalModifyComment{
     commentAddress: Address;
 }
 // trait for user to send comments to different objects
-trait CommentCommunicator with Ownable, Blockable, Masterable, Exitable, AchievementRecieveable{
+trait CommentCommunicator with Ownable, Blockable, Masterable, Exitable, AchievementRecieveableComment{
     //variables from achievementRecieveable
     nickname: String?;
     userId: Int;
-    likesCount: Int;
-    postsCount: Int;
     receivedAchievements: Int;
     achievementMinterAddress: Address;
     //own variables

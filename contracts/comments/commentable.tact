@@ -11,15 +11,20 @@ trait Commentable with UserPerformable {
         self.requireInitialized();
         self.commentsCount += 1;
         let comment: StateInit = self.getCommentAt(self.commentsCount);
-
-        send(SendParameters{
-            value: 0,
-            mode: SendRemainingValue,
-            to: contractAddress(comment),
-            body: InternalInitializeComment{data: m.data, objectOwnerUserId: self.getObjectOwnerUserId()}.toCell(),
-            code: comment.code,
-            data: comment.data
-        });
+        self.forward(
+            contractAddress(comment),
+            InternalInitializeComment{data: m.data, objectOwnerUserId: self.getObjectOwnerUserId()}.toCell(),
+            true,
+            comment
+        );
+//        send(SendParameters{
+//            value: 0,
+//            mode: SendRemainingValue,
+//            to: contractAddress(comment),
+//            body: InternalInitializeComment{data: m.data, objectOwnerUserId: self.getObjectOwnerUserId()}.toCell(),
+//            code: comment.code,
+//            data: comment.data
+//        });
 
     }
     inline fun getCommentAt(id: Int): StateInit{

@@ -2,6 +2,8 @@ import "@stdlib/ownable";
 import "./user.tact";
 import "./nft/user-nfts.tact";
 import "./achievement-master.tact";
+import "./profit/profit-communicator.tact";
+
 message ChangeRegisterAmount{
     amount: Int as coins;
 }
@@ -57,7 +59,8 @@ contract Master with OwnableTransferable, MasterUserBans, NftCollection{
                 owner: sender(),
                 // we take the excess as comission
                 excessTo: self.owner,
-                achievementAddress: contractAddress(self.getAchievementData())
+                achievementAddress: contractAddress(self.getAchievementData()),
+                profitAddress: contractAddress(initOf ProfitCalculator(myAddress())),
             }.toCell(),
             true,
             user

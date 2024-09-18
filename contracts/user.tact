@@ -7,11 +7,13 @@ import "./user/comment-communicator.tact";
 import "./user/like-adder-communicator.tact";
 import "./user/iuser.tact";
 import "./subscribtion.tact";
+import "./subscriptions/index.tact";
 //system messages
 message InitUserInternal{
     owner: Address;
     excessTo: Address;
     achievementAddress: Address;
+    profitAddress: Address;
 }
 
 // getters
@@ -31,7 +33,7 @@ struct UserData{
 const NullAddress: Address = address("UQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJKZ");
 
 
-contract User with OwnableTransferable, Excessable, BlockableByMaster, PostCommunicator, CommentCommunicator, LikeAdderCommunicator, IUser, NftItem{
+contract User with OwnableTransferable, Excessable, BlockableByMaster, PostCommunicator, CommentCommunicator, LikeAdderCommunicator, IUser, NftItem, SubscriptionCommunicator{
     override const storageReserve: Int = ton("0.03");
 
     nickname: String? = null;
@@ -39,27 +41,33 @@ contract User with OwnableTransferable, Excessable, BlockableByMaster, PostCommu
     //variables from traits
     blocked: Bool = false;
     master: Address;
+
     postsCount: Int as uint64 = 0;
     likesCount: Int as uint64 = 0;
     commentsCount: Int as uint64 = 0;
     registerDate: Int as uint64 = 0;
     receivedAchievements: Int as uint256 = 0x0;
     achievementMinterAddress: Address;
+    profitAddress: Address;
     //user owner address
     owner: Address;
     //user id
     userId: Int as uint64;
+    subscriptionsData: UserSubscriptionsData= UserSubscriptionsData{ fromMeCount: 0, toMeCount: 0, levels: emptyMap()};
+
     init(master: Address, userId: Int){
         self.master = master;
         self.userId = userId;
         self.owner = NullAddress;
         self.achievementMinterAddress = NullAddress;
+        self.profitAddress = NullAddress;
     }
     receive(m: InitUserInternal){
         self.requireMaster();
         self.owner = m.owner;
         self.registerDate = now();
         self.achievementMinterAddress = m.achievementAddress;
+        self.profitAddress = m.profitAddress;
         self.excess(m.excessTo, beginString().concat(self.userId.toString()).concat(" initialized").toString());
     }
 

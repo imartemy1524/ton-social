@@ -44,6 +44,21 @@ Right now, there are 2 "centralized" parts in the system:
 2. Frontend. It's opensource, but doesn't stored directly on blockchain (yet). Anyway, it can be accessed by `.ton` domain name.
 
 
+## Developing
+
+To start developing, you need to install the dependencies:
+
+```bash
+npm install
+```
+You can use either `npm`,`yarn`, `pnpm` or any other package manager you like.
+
+After installation, it is required to polyfill the TACT language, which is used in the project (see [tact-plus-plus](https://github.com/imartemy1524/tact-plus-plus)). 
+To do this, you need to run the following command:
+
+```bash
+./polyfilltact.sh
+```
 
 ## Project structure
 

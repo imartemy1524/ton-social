@@ -3,7 +3,7 @@ trait UserPerformable{
     inline fun requireSenderIsUser(userId: Int){
         require(sender() == self.userContractAddress(userId), "Not a user");
     }
-    inline fun userContractAddress(userId: Int): Address{
+    fun userContractAddress(userId: Int): Address{
         return contractAddress(initOf User(self.getMasterAddress(), userId));
     }
     //TODO: need to be ABSTRACT, but multiple inheritance is not supported yet (WTF?)
