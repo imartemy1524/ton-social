@@ -31,7 +31,8 @@ Now, what **account** can do?
 - [x] Users can create accounts (many accounts) from one wallet, and use this account to communicate with other users and objects.
 - [x] Users can create posts, edit them, like them and comment them.
 - [x] Users can answer other comments, like them and edit.
-- [x] Users receive SBT-achievements, when they done some actions (add 1,10,100,... likes, posts, subscriptions, comments)
+- [x] Users receive SBT-achievements, when they're done some actions (add 1,10,100,... likes, posts, subscriptions, comments)
+- [x] Users can subscribe to other users, and receive special SBT-achievements for this (the "master" of this SBT is user contract). Users can set its own "subscriptions levels". One can easily check if user is subscribed to another user, until which time, for which amount etc.
 - [ ]  Users can have unique nickname in the system and can be found by this nickname.
 
 
@@ -46,18 +47,32 @@ Right now, there are 2 "centralized" parts in the system:
 
 ## Developing
 
+You can use either `npm`,`yarn`, `pnpm` or any other package manager you like.
+
 To start developing, you need to install the dependencies:
 
 ```bash
 npm install
 ```
-You can use either `npm`,`yarn`, `pnpm` or any other package manager you like.
 
 After installation, it is required to polyfill the TACT language, which is used in the project (see [tact-plus-plus](https://github.com/imartemy1524/tact-plus-plus)). 
 To do this, you need to run the following command:
 
 ```bash
-./polyfilltact.sh
+npm polyfill
+```
+### Building
+
+To build the project, run the following command:
+
+```bash
+npm run build
+```
+
+To run the tests, use the following command:
+
+```bash
+npm run test
 ```
 
 ## Project structure

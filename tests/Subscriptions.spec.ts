@@ -115,6 +115,7 @@ describe('Subscription', () => {
     it('should subscribe', async () => {
         const subscription = await createSubscription(data);
     });
+    //TODO: add more tests
 });
 
 function genLevels() {
