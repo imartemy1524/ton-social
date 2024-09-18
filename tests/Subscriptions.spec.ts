@@ -70,7 +70,6 @@ async function createSubscription(data: SocialMedia){
         +fromNano((levels.get(0)!.paymentAmount * 99n) / 100n),
     );
 
-    printTransactionFees(transactions);
     const subscriptionContract = blockchain.openContract(
         await Subscription.fromInit(master.address, fromUserId, toUserId),
     );
