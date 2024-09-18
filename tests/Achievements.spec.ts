@@ -3,6 +3,7 @@ import '@ton/test-utils';
 import { Achivement, AchivementMaster } from '../wrappers/Achievement';
 import { SocialMedia, deployMaster, createPost, decodeNftDataOnchain, DefaultAvatar } from './_helpers';
 import { toNano } from '@ton/core';
+import { XMLParser, XMLValidator } from 'fast-xml-parser';
 
 describe('Achievement', () => {
     let data: SocialMedia;
@@ -113,6 +114,41 @@ describe('Achievement', () => {
             expect(receivedAchievements).toBeGreaterThan(oldAchievementsCount);
         }
     });
+
+    it('should create achievement after comment', async () => {
+        //someone created post
+        const post = await createPost(
+            {
+                account: data.userAccounts[5]!,
+                wallet: data.userWallets[5]!,
+                blockchain: data.blockchain,
+            },
+            { text: 'Hello, everybody, lets comment this post!' },
+        );
+        const { postId } = await post.getData();
+        // user 0 adding 100 comments
+        for (let i = 1; i <= 101; i++) {
+            const { receivedAchievements: oldAchievementsCount } = await data.userAccounts[0].getData();
+            await data.userAccounts[0]!.send(
+                data.userWallets[0]!.getSender(),
+                { value: toNano('0.3') },
+                {
+                    $$type: 'ExternalAddComment',
+                    text: `Hello, world from ${i}!`,
+                    parentAddress: post.address,
+                },
+            );
+            const { receivedAchievements } = await data.userAccounts[0].getData();
+            if (i === 1 || i == 10 || i == 100) {
+                // 1, 10, 100 comments should add attachment
+                expect(receivedAchievements).toBeGreaterThan(oldAchievementsCount);
+            }
+            else{
+                expect(receivedAchievements).toBe(oldAchievementsCount);
+            }
+        }
+    });
+
     it('should achievement data be valid', async () => {
         await createPost(
             {
@@ -137,5 +173,43 @@ describe('Achievement', () => {
         expect(onchainDataNFT.attributes?.some((e) => e.trait_type === 'Amount')).toBeTruthy();
 
         let SVG = onchainDataNFT.image_data!.toString('utf-8');
+        expect(isSvg(SVG)).toBeTruthy();
+        expect(isSvg(SVG + 'bob')).not.toBeTruthy();
     });
 });
+
+export default function isSvg(string: string) {
+    if (typeof string !== 'string') {
+        throw new TypeError(`Expected a \`string\`, got \`${typeof string}\``);
+    }
+
+    string = string.trim();
+
+    if (string.length === 0) {
+        return false;
+    }
+
+    // Has to be `!==` as it can also return an object with error info.
+    if (XMLValidator.validate(string) !== true) {
+        return false;
+    }
+
+    let jsonObject;
+    const parser = new XMLParser();
+
+    try {
+        jsonObject = parser.parse(string);
+    } catch {
+        return false;
+    }
+
+    if (!jsonObject) {
+        return false;
+    }
+
+    if (!Object.keys(jsonObject).some((x) => x.toLowerCase() === 'svg')) {
+        return false;
+    }
+
+    return true;
+}

@@ -5,6 +5,7 @@ struct IndividualContent {
     postsCount: Int as uint64;
     registerDate: Int as uint64;
     likesCount: Int as uint64;
+    commentsCount: Int as uint64;
 }
 
 
@@ -46,6 +47,11 @@ extends fun buildAttributesString(self: IndividualContent): String {
             createJsonObject()
                 .appendString("trait_type", "Likes count")
                 .appendString("value", self.likesCount.toString())
+        )
+        .appendObject(
+            createJsonObject()
+                .appendString("trait_type", "Comments count")
+                .appendString("value", self.commentsCount.toString())
         );
     return builderAttributes.toString();
 }

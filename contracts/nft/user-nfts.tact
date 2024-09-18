@@ -19,9 +19,6 @@ trait NftItem with Masterable, Ownable, IUser, Blockable{
     nickname: String?;
     master: Address;
     owner: Address;
-    postsCount: Int;
-    likesCount: Int;
-    registerDate: Int;
     avatar: String?;
     receive(msg: GetStaticData){
         let ctx: Context = context();
@@ -84,15 +81,10 @@ trait NftItem with Masterable, Ownable, IUser, Blockable{
             index: self.userId,
             collection_address: self.master,
             owner_address: self.owner,
-            individual_content: IndividualContent{
-                avatar: self.avatar,
-                nickname: self.nickname != null? self.nickname: null,
-                postsCount: self.postsCount,
-                registerDate: self.registerDate,
-                likesCount: self.likesCount
-            }.toCell()
+            individual_content: self.getIndividualContent()
         };
     }
+    abstract inline fun getIndividualContent(): Cell;
 
 }
 

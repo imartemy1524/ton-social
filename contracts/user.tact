@@ -86,6 +86,7 @@ contract User with OwnableTransferable, Excessable, BlockableByMaster, PostCommu
             postsCount: self.postsCount,
             registerDate: self.registerDate,
             likesCount: self.likesCount,
+            commentsCount: self.commentsCount
         }.toCell()
     }
 

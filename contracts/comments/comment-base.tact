@@ -11,6 +11,9 @@ message InternalUpdateCommentDataFromUser{
     text: String;
     excessTo: Address;
 }
+message ExcessFromComment{
+    bob: Bool;
+}
 
 // comment data trait
 trait CommentBase with Excessable, Parentable, UserOwnable{
@@ -31,7 +34,7 @@ trait CommentBase with Excessable, Parentable, UserOwnable{
         self.text = m.data.text;
         self.date = now();
         self.parentObjectUserOwnerId = m.objectOwnerUserId;
-        self.excess(m.data.excessTo, "ok");
+        self.forward(m.data.excessTo, ExcessFromComment{bob: true}.toCell(), false, null);
     }
     //this message used for updating
     receive(m: InternalUpdateCommentDataFromUser){
@@ -39,6 +42,6 @@ trait CommentBase with Excessable, Parentable, UserOwnable{
         self.text = m.text;
         self.excess(m.excessTo, "ok");
     }
-
+//TODO: add deleting by admin functionality
 
 }

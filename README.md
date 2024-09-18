@@ -6,7 +6,7 @@ There are many social networks in the world, but none of them are **fully** dece
 
 What is it, a fully decentralized social network? It is a social network that is not controlled by any single entity, but by the blockchain. 
 
-This projects contains implementation of a social network on the TON blockchain, and **all** data about users/posts/comments/likes stored and managed **directly** by smart contract, written in tact language.
+This projects contains implementation of a social network on the TON blockchain, where **all** data about users/posts/comments/likes stored and managed **directly** by smart contract, written in tact language.
 
 
 ### Conception
@@ -14,7 +14,7 @@ This projects contains implementation of a social network on the TON blockchain,
 Let's take a look, how it works. First of all, there is [Account](./contracts/user.tact) - the main ~~object~~ contract, through which real users (wallets V5, V4 and etc.) communicates with other ~~objects~~ smart contracts (by sending messages to them through wallets, for example TonKeeper). 
 
 You can think of it as a typical "account", which exists in any social media. 
-It implements NFT interface, thus the ownership can be sold/transferred to other wallet.
+It implements NFT interface, thus the ownership can be sold/transferred to other wallet (official way to sold accounts).
 
 Owner can set account's avatar (it can be stored either directly in blockchain or in any IPFS-like/TON-Storage-like service, contract support any of them), nickname (he can purchase NFT with unique nickname), and some other data.
 
@@ -24,6 +24,7 @@ Now, what **account** can do?
 1. Each account can create [posts](./contracts/post.tact) (share some text data), which would be linked to it. 
 2. Other users can leave [comments](./contracts/comment.tact) to the post or to other comments (answering them).
 3. Users can [like](./contracts/abstract/likeable.tact) any [post](./contracts/post.tact) or [comments](./contracts/comment.tact) (in future, like can contain some value, to support user).
+4. Users can receive [achievements](./contracts/achievement.tact) (SBT) for doing actions.
 
 ### Features
 
@@ -55,16 +56,13 @@ Right now, there are 2 "centralized" parts in the system:
 
 ### Build
 
-`npx blueprint build` or `yarn blueprint build`
+`npx blueprint build`
 
 ### Test
 
-`npx blueprint test` or `yarn blueprint test`
+`npx blueprint test`
 
 ### Deploy or run another script
 
-`npx blueprint run` or `yarn blueprint run`
+`npx blueprint run`
 
-### Add a new contract
-
-`npx blueprint create ContractName` or `yarn blueprint create ContractName`

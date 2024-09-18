@@ -10,16 +10,24 @@ message ExternalModifyComment{
     commentAddress: Address;
 }
 // trait for user to send comments to different objects
-trait CommentCommunicator with Ownable, Blockable, Masterable, Exitable{
+trait CommentCommunicator with Ownable, Blockable, Masterable, Exitable, AchievementRecieveable{
+    //variables from achievementRecieveable
+    nickname: String?;
+    userId: Int;
+    likesCount: Int;
+    postsCount: Int;
+    receivedAchievements: Int;
+    achievementMinterAddress: Address;
+    //own variables
     owner: Address;
     master: Address;
     commentsCount: Int;
     blocked: Bool;
-    virtual const NeedFeeToCreateComment: Int = ton("0.1");
+    virtual const NeedFeeToCreateComment: Int = ton("0.22");
     receive(m: ExternalAddComment){
         self.requireNotBlocked();
         self.requireOwner();
-        require(context().value >= self.NeedFeeToCreateComment, "Value must be >= 0.1");
+        require(context().value >= self.NeedFeeToCreateComment, "Value must be >= 0.22");
         self.validateCommentData(m.text);
         self.commentsCount += 1;
         //we should send message to post, becuase it should increase comments count and blockchain should verify, that post exists (the post controlls the progress of crating comments)
@@ -28,7 +36,7 @@ trait CommentCommunicator with Ownable, Blockable, Masterable, Exitable{
             AddCommentInternalObject{
                 data: CommentCreateData{
                     text: m.text,
-                    excessTo: self.owner,
+                    excessTo: self.checkCommentAchievements(false) ? (myAddress()) : self.owner,
                     fromUserId: self.getUserId()
                 }
             }.toCell(), true, null
@@ -41,18 +49,21 @@ trait CommentCommunicator with Ownable, Blockable, Masterable, Exitable{
     receive(m: ExternalModifyComment){
         self.requireNotBlocked();
         self.requireOwner();
-        require(context().value >= self.NeedFeeToCreateComment, "Value must be >= 0.1");
+        require(context().value >= self.NeedFeeToCreateComment, "Value must be >= 0.22");
         self.validateCommentData(m.text);
-        send(SendParameters{
-            value: 0,
-            mode: SendRemainingValue,
-            to: m.commentAddress,
-            body: InternalUpdateCommentDataFromUser{
+        self.forward(
+            m.commentAddress,
+            InternalUpdateCommentDataFromUser{
                 text: m.text,
                 excessTo: self.owner
-            }.toCell()
-        });
+            }.toCell(),
+            true,
+            null
+        );
         self.exitWithoutSaving();
+    }
+    receive(m: ExcessFromComment){
+        self.checkCommentAchievements(true);
     }
 
     inline fun validateCommentData(m: String){
