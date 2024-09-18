@@ -38,5 +38,5 @@ jobs:
 
       # Run build and tests using PNPM
       - run: pnpm run polyfill
-      - run: pnpm run build --if-present
+      - run: pnpm run build
       - run: pnpm test
