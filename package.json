@@ -4,7 +4,8 @@
     "scripts": {
         "start": "blueprint run",
         "build": "blueprint build",
-        "test": "jest --verbose"
+        "test": "jest --verbose",
+        "polyfill": "./polyfilltact.sh"
     },
     "devDependencies": {
         "@ton/blueprint": "^0.22.0",
