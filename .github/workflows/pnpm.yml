@@ -1,7 +1,4 @@
-# This workflow will do a clean installation of node dependencies using PNPM, cache/restore them, build the source code, and run tests across different versions of node
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
-
-name: Node.js pnpm CI
+name: Node.js CI
 
 on:
   push:
@@ -20,25 +17,26 @@ jobs:
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    # Setup Node.js
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'pnpm'
+      # Setup Node.js
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
 
-    # Setup PNPM
-    - name: Setup PNPM
-      uses: pnpm/action-setup@v2.2.4
-      with:
-        version: 8.x # Adjust the version based on your project needs
+      # Install PNPM
+      - name: Setup PNPM
+        run: npm install -g pnpm@8.x # Installs PNPM globally using NPM
 
-    # Install dependencies using PNPM
-    - run: pnpm install
+      # Verify PNPM installation
+      - name: Verify PNPM installation
+        run: pnpm --version # This checks if PNPM is correctly installed and available
 
-    # Run build and tests using PNPM
-    - run: pnpm run polyfill
-    - run: pnpm run build --if-present
-    - run: pnpm test
+      # Install dependencies using PNPM
+      - run: pnpm install
+
+      # Run build and tests using PNPM
+      - run: pnpm run polyfill
+      - run: pnpm run build --if-present
+      - run: pnpm test
