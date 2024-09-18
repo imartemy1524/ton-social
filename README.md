@@ -82,17 +82,5 @@ npm run test
 -   `tests` - tests for the contracts.
 -   `scripts` - scripts used by the project, mainly the deployment scripts.
 
-## How to use
-
-### Build
-
-`npx blueprint build`
-
-### Test
-
-`npx blueprint test`
-
-### Deploy or run another script
-
-`npx blueprint run`
-
+## Visits
+![https://count.getloli.com/get/@ton-social.github?theme=gelbooru](https://count.getloli.com/get/@ton-social?theme=gelbooru)
