@@ -25,6 +25,7 @@ struct UserData{
     postsCount: Int as uint64;
     likesCount: Int ;
     receivedAchievements: Int;
+    subscriptionsData: UserSubscriptionsData;
 }
 
 
@@ -79,7 +80,8 @@ contract User with OwnableTransferable, Excessable, BlockableByMaster, PostCommu
             blocked: self.blocked,
             postsCount: self.postsCount,
             likesCount: self.likesCount,
-            receivedAchievements: self.receivedAchievements
+            receivedAchievements: self.receivedAchievements,
+            subscriptionsData: self.subscriptionsData
         };
     }
 
@@ -96,6 +98,9 @@ contract User with OwnableTransferable, Excessable, BlockableByMaster, PostCommu
             likesCount: self.likesCount,
             commentsCount: self.commentsCount
         }.toCell()
+    }
+    override fun getMasterAddress(): Address{
+        return self.master;
     }
 
 }

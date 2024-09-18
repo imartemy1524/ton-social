@@ -1,5 +1,5 @@
 const PROFIT_SUBSCRIBTION: Int = 1;
-message(0x77777777) ProfitMessageSubscribtion{
+message(0x77777777) ProfitMessageSubscription{
     //PROFIT_* const
     action: Int as uint8;
     keepAmount: Int as coins;
@@ -31,7 +31,7 @@ contract ProfitCalculator with Masterable, Exitable, UserPerformable{
     }
 
 
-    receive(m: ProfitMessageSubscribtion){
+    receive(m: ProfitMessageSubscription){
         let fromSubscription = initOf Subscription(self.master, m.subscriptionFromUserId, m.subscriptionToUserId);
         require(sender() == contractAddress(fromSubscription), "only subscription contract can send profit message");
         self.counters.set(m.action, self.counters.get(PROFIT_SUBSCRIBTION)!! + 1);

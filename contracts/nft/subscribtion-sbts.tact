@@ -62,40 +62,39 @@ message(0x6f89f5e3) Revoke {
 message(0xd136d3b3) TakeExcess {
     query_id: Int as uint64;
 }
-struct SubscribtionData{
+struct SubscriptionData{
     level: Int as uint8;
     paymentPeriod: Int as uint64;
     paymentAmount: Int as coins;
 }
 struct IndividualContentSBT{
-    data: SubscribtionData?;
+    data: SubscriptionData?;
     expiredAt: Int as uint64;
 }
 
-trait SbtItem with Masterable, UserOwnable, Exitable, Blockable{
+trait SbtItem with Masterable, UserOwnable, Exitable{
     //who initialized the subsctiption
     ownerUserId: Int;
     //to whom the subscription is
     userToId: Int;
     master: Address;
     validUntil: Int;
-    blocked: Bool;
     revokedAt: Int ;
-    subscribtion: SubscribtionData?;
+    subscribtion: SubscriptionData?;
     virtual fun getSystemFee(oldValue: Int): Int{
         //return 2% of the value
         return oldValue/50;
     }
 
     receive(msg: GetStaticData){
-        self.requireNotBlocked();
+        require(self.isNftInitialized(), "Not initialized");
         self.reply(ReportStaticData{ query_id: msg.query_id, index_id: self.ownerUserId, collection: self.userContractAddress(self.userToId)}.toCell());
     }
     receive(msg: Transfer){
         throw(132);
     }
     receive(msg: ProveOwnership) {
-        self.requireNotBlocked();
+        require(self.isNftInitialized(), "Not initialized");
         require(self.isNftInitialized(), "Not Initiated");
         self.requireOwner();
         let content: Cell? = null;
@@ -117,7 +116,6 @@ trait SbtItem with Masterable, UserOwnable, Exitable, Blockable{
         self.exitWithoutSaving();
     }
     receive(msg: RequestOwner) {
-        self.requireNotBlocked();
         require(self.isNftInitialized(), "Not Initiated");
         let content: Cell? = null;
         if (msg.with_content) {
@@ -145,8 +143,7 @@ trait SbtItem with Masterable, UserOwnable, Exitable, Blockable{
     }
     //call when subscribtion is ended, to get excess funds back, if you don't want to continue it
     receive(msg: Destroy) {
-        self.requireNotBlocked();
-        require(self.isNftInitialized(), "Not Initiated");
+        require(self.isNftInitialized(), "Not initialized");
         self.requireOwner();
         send(SendParameters{
             to: self.userContractAddress(self.ownerUserId),
@@ -159,8 +156,7 @@ trait SbtItem with Masterable, UserOwnable, Exitable, Blockable{
 
     //revoke subscribtion
     receive(msg: Revoke) {
-        require(self.isNftInitialized(), "Not Initiated");
-        self.requireNotBlocked();
+        require(self.isNftInitialized(), "Not initialized");
         self.requireSenderIsUser(self.userToId);
         require(self.revokedAt == 0, "Already revoked");
 //        self.releaseFunds(msg.query_id, true);
@@ -192,7 +188,6 @@ trait SbtItem with Masterable, UserOwnable, Exitable, Blockable{
         return IndividualContentSBT{
             data: self.subscribtion,
             expiredAt: self.validUntil
-
         }.toCell()
     }
 

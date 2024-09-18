@@ -12,6 +12,7 @@ import { sha256_sync } from '@ton/crypto';
 import { readFile } from 'node:fs/promises';
 import { readFileSync } from 'fs';
 import { UserPost } from '../build/Master/tact_UserPost';
+import { ProfitCalculator } from '../build/Master/tact_ProfitCalculator';
 
 export interface SocialMedia {
     blockchain: Blockchain;
@@ -20,12 +21,14 @@ export interface SocialMedia {
     superMaster: SandboxContract<Master>;
     masterOwner: SandboxContract<TreasuryContract>;
     master: SandboxContract<Master>;
+    profitContract: SandboxContract<ProfitCalculator>;
 }
 
 export const DefaultAvatar = readFileSync(__dirname + '/../contracts/static/avatar.jpg');
 
 export async function deployMaster(): Promise<SocialMedia> {
     const blockchain = await Blockchain.create();
+    blockchain.now = 1000;
     const userWallets = await blockchain.createWallets(10);
     const [masterOwner] = await blockchain.createWallets(1);
     const master = blockchain.openContract(await Master.fromInit());
@@ -51,7 +54,8 @@ export async function deployMaster(): Promise<SocialMedia> {
         userAccounts.push(user);
     }
 
-    return { blockchain, userWallets, userAccounts, master, masterOwner, superMaster: master };
+    const profitContract = blockchain.openContract(await ProfitCalculator.fromInit(master.address));
+    return { blockchain, userWallets, userAccounts, master, masterOwner, superMaster: master, profitContract };
 }
 
 //parsing onchain data in NFT

@@ -4,12 +4,15 @@ struct UserSubscriptionsData{
     //how much subscriptions this user gave to other users (subscribed to them)
     fromMeCount: Int as uint32 = 0;
 
-    levels: map<Int as uint8, SubscribtionData>;
+    levels: map<Int as uint8, SubscriptionData>;
+}
+message SubscriptionSetLevels{
+    levels: map<Int as uint8, SubscriptionData>;
 }
 
 
 trait SubscriptionCommunicator with IUser, Ownable, UserPerformable, ProfitCommunicator, Exitable, Excessable, AchievementRecieveableSubscription {
-    virtual const minSubscriptionFee: Int = ton("0.22");
+    virtual const minSubscriptionFee: Int = ton("0.3");
     subscriptionsData: UserSubscriptionsData;
     nickname: String?;
     userId: Int;
@@ -41,11 +44,10 @@ trait SubscriptionCommunicator with IUser, Ownable, UserPerformable, ProfitCommu
         let level = self.subscriptionsData.levels.get(m.level);
         require(level != null, "level not found");
         require(context().value >= level!!.paymentAmount + self.minSubscriptionFee, "not enough funds to subscribe");
-        let payed = (context().value - self.minSubscriptionFee);
         let subsription = self.getMySubscription(m.fromUserId);
         self.subscriptionsData.toMeCount += 1;
         //save 99% of the amount to this account
-        nativeReserve(payed * 99/100, ReserveExact | ReserveAddOriginalBalance );
+        nativeReserve(level!!.paymentAmount * 99/100, ReserveExact | ReserveAddOriginalBalance );
         send(SendParameters{
             to: contractAddress(subsription),
             value: 0,
@@ -54,7 +56,6 @@ trait SubscriptionCommunicator with IUser, Ownable, UserPerformable, ProfitCommu
             body: SubscriptionInit{
                 data: level!!,
                 userFromId: m.fromUserId,
-                payed,
                 profitAddress: self.profitAddress
             }.toCell(),
             data: subsription.data,
@@ -64,7 +65,7 @@ trait SubscriptionCommunicator with IUser, Ownable, UserPerformable, ProfitCommu
     receive(m: ExcessFromProfitSubscription){
         require(sender() == self.profitAddress, "Not a profit contract");
         require(m.success, "Profit failed");
-        self.subscriptionsData.fromMeCount == 1;
+        self.subscriptionsData.fromMeCount += 1;
         if(!self.checkSubscriptionAchievements(true)){
             self.excess(self.owner, "ok");
         }
@@ -83,5 +84,13 @@ trait SubscriptionCommunicator with IUser, Ownable, UserPerformable, ProfitCommu
     }
     inline fun getMySubscription(userFromId: Int): StateInit{
         return self.getSubscription(self.userId, userFromId);
+    }
+
+
+    //levels setter
+
+    receive(m: SubscriptionSetLevels){
+        self.requireOwner();
+        self.subscriptionsData.levels = m.levels;
     }
 }
