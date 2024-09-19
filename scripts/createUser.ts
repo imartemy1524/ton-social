@@ -4,6 +4,7 @@ import { Master } from '../wrappers/Master';
 import { NetworkProvider } from '@ton/blueprint';
 
 export async function run(provider: NetworkProvider) {
+    // const master = provider.open(await Master.fromInit());
     const master = provider.open(await Master.fromInit());
     const { next_item_index: oldIndex } = await master.getGetCollectionData();
     await master.send(

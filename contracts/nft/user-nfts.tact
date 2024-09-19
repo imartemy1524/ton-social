@@ -91,11 +91,11 @@ trait NftItem with Masterable, Ownable, IUser, Blockable{
 
 trait NftCollection with Ownable, UserPerformable{
     abstract const CollectionName: String;
-    abstract const CollectionDescription: String;
     abstract const LogoURL: String;
     abstract const MartketplaceURL: String;
     abstract inline fun getDefaultAvatar(): String;
     abstract inline fun getRoyaltyAddress(): Address;
+    abstract inline fun collectionDescription(): String;
     //if true - build data as snake cell, otherwise as dict
     virtual const BUILD_NFT_DATA_AS_SNAKE: Bool = false;
     lastUserId: Int;
@@ -108,7 +108,7 @@ trait NftCollection with Ownable, UserPerformable{
         let data: map<Int, ElString> = emptyMap();
         data.set(sha256("name"), ElString{
         value: self.CollectionName});
-        data.set(sha256("description"), ElString{ value: beginString().concat(self.lastUserId.toString()).concat(" ").concat(self.CollectionDescription).toString()});
+        data.set(sha256("description"), ElString{ value: self.collectionDescription()});
         data = setImage(data, self.LogoURL);
 //        data.set( sha256("image"), ElString{ value: self.LogoURL});
         data.set(sha256("marketplace"), ElString{

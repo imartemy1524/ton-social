@@ -26,6 +26,9 @@ trait UserSubscriptionCollection with UserPerformable{
     virtual inline fun collectionName(): String{
         return "";
     }
+    virtual inline fun subscriptionsCount(): Int{
+        return 0;
+    }
     avatar: String? = null;
     virtual const BUILD_NFT_DATA_AS_SNAKE: Bool = true;
     get fun get_collection_data(): CollectionData {
@@ -34,7 +37,7 @@ trait UserSubscriptionCollection with UserPerformable{
         data.set(sha256("description"), ElString{ value: self.collectionDescription()});
         //TODO: add some image and insert user's avatar inside it
         data = setImage(data, self.avatar!=null?self.avatar!!:"https://images.squarespace-cdn.com/content/v1/5478e059e4b04a873e34cd68/1545079938433-0ZHMJ1RJW2R4U6X8NOXY/Subscribe.jpeg");
-        return CollectionData{ next_item_index: -1, collection_content: buildData(data, self.BUILD_NFT_DATA_AS_SNAKE),owner_address: NullAddress};
+        return CollectionData{ next_item_index: self.subscriptionsCount(), collection_content: buildData(data, self.BUILD_NFT_DATA_AS_SNAKE),owner_address: myAddress()};
     }
     get fun get_nft_content(index: Int, individual_content: Cell): Cell {
         let content: IndividualContentSBT = IndividualContentSBT.fromCell(individual_content);

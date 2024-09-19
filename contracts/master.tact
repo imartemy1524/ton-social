@@ -13,7 +13,13 @@ struct StringData{
 }
 contract Master with OwnableTransferable, MasterUserBans, NftCollection{
     override const CollectionName: String = "Test";//"NetoTon users";
-    override const CollectionDescription: String = "users on NetoTon blockchain, each represented by a unique NFT";
+    override fun collectionDescription(): String{
+        return beginString()
+            .concat("Collection of ")
+            .concat(self.lastUserId.toString())
+            .concat(" users on NetoTon blockchain, each represented by a unique NFT")
+            .toString();
+    }
     //TODO
     override const LogoURL: String = "https://i.imgur.com/P8tmkRB.png"; //readFile("./static/collection.jpg", "binary");
     override const MartketplaceURL: String = "getgems.io";

@@ -23,6 +23,9 @@ trait SubscriptionCommunicator with IUser, Ownable, UserPerformable, ProfitCommu
     receivedAchievements: Int;
     avatar: String?;
 
+    override fun subscriptionsCount(): Int{
+        return self.subscriptionsData.toMeCount;
+    }
 
     override fun collectionDescription(): String{
         return "SBT collection of subscriptions for current user.";
