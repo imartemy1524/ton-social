@@ -107,7 +107,7 @@ inline fun nftTextToCell(input: String, storeAsSnake: Bool): Cell {
     }
     return nftTextToCellAsDict(input);
 }
-inline fun buildData(content: map<Int, ElString>, asSnake: Bool): Cell{
+fun buildData(content: map<Int, ElString>, asSnake: Bool): Cell{
     let ans: map<Int as uint256, Cell> = emptyMap();
     foreach(key, value in content){
         //

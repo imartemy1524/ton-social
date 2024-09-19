@@ -108,7 +108,7 @@ trait NftCollection with Ownable, UserPerformable{
         let data: map<Int, ElString> = emptyMap();
         data.set(sha256("name"), ElString{
         value: self.CollectionName});
-        data.set(sha256("description"), ElString{ value: self.CollectionDescription});
+        data.set(sha256("description"), ElString{ value: beginString().concat(self.lastUserId.toString()).concat(" ").concat(self.CollectionDescription).toString()});
         data = setImage(data, self.LogoURL);
 //        data.set( sha256("image"), ElString{ value: self.LogoURL});
         data.set(sha256("marketplace"), ElString{

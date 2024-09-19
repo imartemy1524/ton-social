@@ -17,7 +17,7 @@ export async function run(provider: NetworkProvider) {
     );
     console.log(`Master deployed at ${master.address.toString()}`);
 
-    const user = await master.getUser(oldIndex);
+    const user = await master.getUser(oldIndex+1n);
 
     await provider.waitForDeploy(user, 100);
     console.log(`User deployed at ${user.toString()}`);

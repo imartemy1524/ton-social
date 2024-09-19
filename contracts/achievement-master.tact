@@ -29,13 +29,10 @@ contract AchivementMaster with AchivementsMinter, AchievementCollection, Blockab
     }
     receive(m: MintAchievementMessage){
         self.requireMaster();
-        self.requireNotBlocked();
+        require(self.blocked, "Minting is blocked");
         self.blocked = false;
-        self.forward(m.excessTo, "ok".asComment(), false, null);
+        self.forward(m.excessTo, "achievement ok".asComment(), false, null);
         ///ok...???
     }
-
-
-
 
 }

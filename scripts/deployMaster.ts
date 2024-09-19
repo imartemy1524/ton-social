@@ -10,7 +10,7 @@ export async function run(provider: NetworkProvider) {
     await master.send(
         provider.sender(),
         {
-            value: toNano('0.2'),
+            value: toNano('0.55'),
         },
         {
             $$type: 'Deploy',
