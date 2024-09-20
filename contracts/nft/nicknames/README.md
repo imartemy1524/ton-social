@@ -2,13 +2,13 @@
 
 As there aren't any good articles in the internet about how TON DNS works, I decided to write one.
 
-There [standard](https://github.com/ton-blockchain/TIPs/issues/81), which I still don't understand, but I will try to explain it in my own words.
+There is a [standard](https://github.com/ton-blockchain/TIPs/issues/81), which I still don't understand, thus I will try to explain it in my own words.
 
 ## What is TON DNS
 
-TON DNS is a decentralized domain name system for TON blockchain. It allows to register domain names and 'link' them to next objects (domain may be linked too few of them at the same time).:
+TON DNS is a decentralized domain name system for TON blockchain. It allows to "register" domain names and 'link' them to next objects (domain may be linked too few of them at the same time).:
 
--  Other wallet address (category=`sha256("wallet")`)
+-  Other wallet addresses (category=`sha256("wallet")`)
 -  Websites, hosted either in ADNL network OR in TON Storage (category=`sha256("site")`)
 -  Ton Storage object (category=`sha256("storage")`)
 -  Redirects (category=`sha256("dns_next_resolver")`) - to "redirect" the request to another smart contract (for example, one can build subdomains this way, by "cutting" parts of the domain by ".", and "redirecting" resolve request to other smart contracts)
@@ -38,9 +38,13 @@ Suppose, that one wants to resolve domain `telegram.pavel-durov.ton`.
 
     For example, our domain `telegram.pavel-durov.ton` would be converted to `\0ton\0pavel-durov\0telegram\0` OR `ton\0pavel-durov\0telegram\0` (first `\0` is optional).
 
-2. Then, he calls `dnsresolve` function of the root smart contract, which is stored in [blockchain config #4](https://tonviewer.com/config#4). 
+2. Sets `N = ` root smart contract, which is stored in [blockchain config #4](https://tonviewer.com/config#4)
     
-    - If contract supports "redirecting" this request to another smart contract (by returning redirect request with category=`sha256("dns_next_resolver")`), then:
+    Sets `subdomain = "\0ton\0pavel-durov\0telegram\0"`.
+
+3. Calls `dnsresolve(subdomain, ???)`  function of the contract `N`. 
+    
+    - If contract supports "redirecting" this request to another smart contract (by returning redirect request on `dnsresolve(subdomain, sha256("dns_next_resolver"))`), then:
         1. machine-readable domain is being "cut" by `first returned integer` (in bits). 
             
             **For example**, if one resolves `\0ton\0pavel-durov\0telegram\0` at the [root smart contract](https://tonviewer.com/Ef_lZ1T4NCb2mwkme9h2rJfESCE0W34ma9lWp7-_uY3zXDvq?section=code), it would return `4 * 8` as `first returned integer` (in bits).
@@ -49,10 +53,13 @@ Suppose, that one wants to resolve domain `telegram.pavel-durov.ton`.
             
         2. At the second parameter, *redirect cell* is returned im [this format](#redirect-to-another-domain).
             
-            Resolver parses `address` from there and goes to `#2`, replacing `root smart contract` by returned address (repeats the process for subdomain string).
+            One parses `address` from there and repeats process `#3`, setting `N = ` returned address (repeats the process for subdomain string).
     
-    - fror    
-
+    - If contract supports `dnsresolve(subdomain, sha256("site"))`, then it returns response in [ton storage return format](#ton-storage) or [ADNL format](#adnl-format) (depends on the contract implementation).
+    - If contract supports `dnsresolve(subdomain, sha256("wallet"))`, then it returns response in [address format](#address-format).
+    - If contract supports `dnsresolve(subdomain, sha256("storage"))`, then it returns response in [ton storage return format](#ton-storage).
+   
+P.S. To get all supported categories, call `dnsresolve(subdomain, 0)` - it would return `map<Int as uint256, Cell>`, where `int` is category and `Cell` is some [response formats](#response-formats).
 
 ### Example for `telegram.pavel-durov.ton` domain (trying to get WEBSITE)
 
