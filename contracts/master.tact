@@ -3,7 +3,7 @@ import "./user.tact";
 import "./nft/user-nfts.tact";
 import "./achievement-master.tact";
 import "./profit/profit-communicator.tact";
-
+import "./nft/nicknames/index.tact";
 message ChangeRegisterAmount{
     amount: Int as coins;
 }

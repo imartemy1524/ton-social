@@ -10,7 +10,6 @@ trait AchievementCollection{
     virtual const BUILD_NFT_DATA_AS_SNAKE: Bool = true;
     lastSbtId: Int;
     get fun get_collection_data(): CollectionData {
-        //TODO: fix asSlice and then asCell...
         let data: map<Int, ElString> = emptyMap();
         data.set(sha256("name"), ElString{ value: self.CollectionName});
         data.set(sha256("description"), ElString{ value: self.CollectionDescription});
