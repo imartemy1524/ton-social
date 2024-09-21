@@ -9,9 +9,11 @@ trait DnsMaster with DNSResolver, UserPerformable, Ownable{
             dict.set(sha256("wallet"), dnsResolveWallet(myAddress()));
 
             if category == 0 {
-                return DNSResolveResult{prefix: 0, record: dict.asCell()};
+                return DNSResolveResult{
+                prefix: 0, record: dict.asCell()};
             }
-            return DNSResolveResult{prefix: 0, record: dict.get(category)};
+            return DNSResolveResult{
+            prefix: 0, record: dict.get(category)};
         }
         let maped: map<Int as uint256, Cell> = emptyMap();
         let subdomain = dnsExtractTopDomain(subdomainFull);
@@ -27,10 +29,6 @@ trait DnsMaster with DNSResolver, UserPerformable, Ownable{
         else if(subdomain.startsWithOwner() && subdomain.bits() == 5*8){
             maped.set(sha256("wallet"), dnsResolveWallet(self.owner));
         }
-
-        if category == 0 {
-            return DNSResolveResult{prefix, record: maped.asCell()};
-        }
-        return DNSResolveResult{prefix, record: maped.get(category)};
+        return dnsResolveResult(prefix, maped, category);
     }
 }

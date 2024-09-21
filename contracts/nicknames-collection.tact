@@ -9,6 +9,7 @@ import "./abstract/parentable.tact";
 import "./abstract/exitable.tact";
 import "./abstract/excessable.tact";
 import "./utils/json.tact";
+import "./utils/string.tact";
 //import "./user/iuser.tact";
 message SetWebisteId{
     websiteId: Int;

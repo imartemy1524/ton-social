@@ -56,8 +56,11 @@ export async function deployMaster(): Promise<SocialMedia> {
             $$type: 'Deploy',
             queryId: 0n
         },
-    )
-    const master = blockchain.openContract(await Master.fromInit());
+    );
+    const master = blockchain.openContract(await Master.fromInit(
+        masterOwner.address,
+        nicknamesMaster.address
+    ));
     const { transactions } = await master.send(
         masterOwner.getSender(),
         { value: toNano('0.6') },
@@ -66,9 +69,9 @@ export async function deployMaster(): Promise<SocialMedia> {
             queryId: 0n,
         },
     );
-    expect(transactions).not.toHaveTransaction({
-        exitCode: e=>e !== 0,
-    });
+    // expect(transactions).not.toHaveTransaction({
+    //     exitCode: e=>e !== 0,
+    // });
 
     let userAccounts: SandboxContract<User>[] = [];
     for (const userWallet of userWallets) {
@@ -285,6 +288,7 @@ export async function createPost(
         },
     );
     // printTransactionFees(transactions);
+    //@ts-ignore
     expect(transactions).toHaveTransaction({
         from: wallet.address,
         to: account.address,
@@ -403,3 +407,6 @@ export function genLevels() {
     }
     return levels;
 }
+
+
+

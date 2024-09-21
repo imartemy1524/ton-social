@@ -8,12 +8,18 @@ import "./user/like-adder-communicator.tact";
 import "./user/iuser.tact";
 import "./subscription.tact";
 import "./subscriptions/index.tact";
+import "./DNS/dns-user.tact";
+import "./DNS/dns-item.tact";
+import "./DNS/nickname-item-findable.tact";
+import "./nft/DNS/dns-nft-item.tact";
+import "./nicknames-collection-item.tact";
 //system messages
 message InitUserInternal{
     owner: Address;
     excessTo: Address;
     achievementAddress: Address;
     profitAddress: Address;
+    nicknameCollection: Address;
 }
 
 // getters
@@ -34,7 +40,7 @@ struct UserData{
 const NullAddress: Address = address("UQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJKZ");
 
 
-contract User with OwnableTransferable, Excessable, BlockableByMaster, PostCommunicator, CommentCommunicator, LikeAdderCommunicator, IUser, NftItem, SubscriptionCommunicator{
+contract User with OwnableTransferable, Excessable, BlockableByMaster, PostCommunicator, CommentCommunicator, LikeAdderCommunicator, IUser, NftItem, SubscriptionCommunicator, DnsUser{
     override const storageReserve: Int = ton("0.03");
 
     nickname: String? = null;
@@ -55,6 +61,8 @@ contract User with OwnableTransferable, Excessable, BlockableByMaster, PostCommu
     //user id
     userId: Int as uint64;
     subscriptionsData: UserSubscriptionsData= UserSubscriptionsData{ fromMeCount: 0, toMeCount: 0, levels: emptyMap()};
+    blockedDNS: Bool = false;
+    nicknameCollection: Address? = null;
 
     init(master: Address, userId: Int){
         self.master = master;
@@ -66,6 +74,7 @@ contract User with OwnableTransferable, Excessable, BlockableByMaster, PostCommu
     receive(m: InitUserInternal){
         self.requireMaster();
         self.owner = m.owner;
+        self.nicknameCollection = m.nicknameCollection;
         self.registerDate = now();
         self.achievementMinterAddress = m.achievementAddress;
         self.profitAddress = m.profitAddress;
