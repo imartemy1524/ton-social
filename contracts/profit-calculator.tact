@@ -10,12 +10,11 @@ message ExcessFromProfitSubscription{
     success: Bool
 }
 message DeployProfitCalculator{
-    initData: StateInit;
-    body: Cell;
+    excessTo: Address;
 }
 
 // Contract to calculate profit
-contract ProfitCalculator with Masterable, Exitable, UserPerformable{
+contract ProfitCalculator with Masterable, Exitable, UserPerformable, Excessable{
     override const storageReserve: Int = ton("0.02");
     counters: map<Int as uint8, Int as uint64>;
     master: Address;
@@ -27,7 +26,7 @@ contract ProfitCalculator with Masterable, Exitable, UserPerformable{
     }
     receive(deploy: DeployProfitCalculator) {
         self.requireMaster();
-        self.forward(contractAddress(deploy.initData), deploy.body, true, deploy.initData);
+        self.excess(deploy.excessTo, "profit ok");
     }
 
 

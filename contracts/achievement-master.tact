@@ -8,7 +8,7 @@ contract AchivementMaster with AchivementsMinter, AchievementCollection, Blockab
     override const CollectionName: String = "NetoTon Achievements";
     override const CollectionDescription: String = "Collection of SBT achievements, which automatically minted by the system for NetoTon users";
     override const LogoURL: String = readFile("./achievements/collectionLogo.svg", "utf8");
-    override const MartketplaceURL: String = "getgems.io";
+    override const MartketplaceURL: String = "marketplace.netoton.ton";
     override const storageReserve: Int = ton("0.1");
 
 
@@ -29,13 +29,10 @@ contract AchivementMaster with AchivementsMinter, AchievementCollection, Blockab
     }
     receive(m: MintAchievementMessage){
         self.requireMaster();
-        self.requireNotBlocked();
+        require(self.blocked, "Minting is blocked");
         self.blocked = false;
-        self.forward(m.excessTo, "ok".asComment(), false, null);
+        self.forward(m.excessTo, "achievement ok".asComment(), false, null);
         ///ok...???
     }
-
-
-
 
 }

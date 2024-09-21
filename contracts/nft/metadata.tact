@@ -7,6 +7,15 @@ struct IndividualContent {
     likesCount: Int as uint64;
     commentsCount: Int as uint64;
 }
+inline fun setImage(data: map<Int, ElString>, avatar: String): map<Int, ElString>{
+    //starts with http
+    if(avatar.asSlice().preloadUint(32)== 0b01101000011101000111010001110000){
+        data.set(sha256("image"), ElString{ value: avatar});
+    } else {
+        data.set(sha256("image_data"), ElString{ value: avatar});
+    }
+    return data;
+}
 
 
 inline extends mutates fun appendNickName(self: StringBuilder, nickname: String?, index: Int){
@@ -107,7 +116,7 @@ inline fun nftTextToCell(input: String, storeAsSnake: Bool): Cell {
     }
     return nftTextToCellAsDict(input);
 }
-inline fun buildData(content: map<Int, ElString>, asSnake: Bool): Cell{
+fun buildData(content: map<Int, ElString>, asSnake: Bool): Cell{
     let ans: map<Int as uint256, Cell> = emptyMap();
     foreach(key, value in content){
         //

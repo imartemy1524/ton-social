@@ -29,11 +29,11 @@ trait AchievementRecieveable with IUser, Ownable{
     inline fun __sendAchievement(type: Int){
         self.receivedAchievements |= (1 << (type-1));
         self.forward(
-        self.achievementMinterAddress,
-        ReceiveAchivement{
-        achievementId: type, userId: self.userId, excessTo: self.owner }.toCell(),
-        true,
-        null
+            self.achievementMinterAddress,
+            ReceiveAchivement{
+                achievementId: type, userId: self.userId, excessTo: self.owner }.toCell(),
+                true,
+                null
         );
     }
 

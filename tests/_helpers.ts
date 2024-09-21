@@ -14,10 +14,11 @@ import {
     Builder,
     Cell,
     Dictionary,
-    DictionaryValue, fromNano,
+    DictionaryValue,
+    fromNano,
     Sender,
     Slice,
-    toNano
+    toNano,
 } from '@ton/core';
 import { sha256_sync } from '@ton/crypto';
 import { readFile } from 'node:fs/promises';
@@ -44,7 +45,17 @@ export async function deployMaster(): Promise<SocialMedia> {
     const userWallets = await blockchain.createWallets(11);
     const [masterOwner] = await blockchain.createWallets(1);
     const master = blockchain.openContract(await Master.fromInit());
-    await master.send(masterOwner.getSender(), { value: toNano('0.6') }, { $$type: 'Deploy', queryId: 0n });
+    const { transactions } = await master.send(
+        masterOwner.getSender(),
+        { value: toNano('0.6') },
+        {
+            $$type: 'Deploy',
+            queryId: 0n,
+        },
+    );
+    expect(transactions).not.toHaveTransaction({
+        exitCode: e=>e !== 0,
+    });
 
     let userAccounts: SandboxContract<User>[] = [];
     for (const userWallet of userWallets) {
@@ -276,8 +287,6 @@ export async function createPost(
     return post;
 }
 
-
-
 export async function setLevels(account: SandboxContract<User>, sender: Sender, levels: Map<number, SubscriptionData>) {
     const dict = Dictionary.empty<number, SubscriptionData>();
     for (const [key, value] of levels) {
@@ -367,7 +376,6 @@ export async function createSubscription(data: SocialMedia, fromUserIndex: numbe
         paymentPeriod,
     };
 }
-
 
 export function genLevels() {
     const levels: Map<number, SubscriptionData> = new Map();

@@ -1,3 +1,4 @@
+import "./user-subscription-collection.tact";
 struct UserSubscriptionsData{
     //how much subscriptions this user has
     toMeCount: Int as uint32 = 0;
@@ -11,7 +12,7 @@ message SubscriptionSetLevels{
 }
 
 
-trait SubscriptionCommunicator with IUser, Ownable, UserPerformable, ProfitCommunicator, Exitable, Excessable, AchievementRecieveableSubscription {
+trait SubscriptionCommunicator with IUser, Ownable, UserPerformable, ProfitCommunicator, Exitable, Excessable, AchievementRecieveableSubscription, UserSubscriptionCollection {
     virtual const minSubscriptionFee: Int = ton("0.3");
     subscriptionsData: UserSubscriptionsData;
     nickname: String?;
@@ -20,7 +21,18 @@ trait SubscriptionCommunicator with IUser, Ownable, UserPerformable, ProfitCommu
     achievementMinterAddress: Address;
     profitAddress: Address;
     receivedAchievements: Int;
+    avatar: String?;
 
+    override fun subscriptionsCount(): Int{
+        return self.subscriptionsData.toMeCount;
+    }
+
+    override fun collectionDescription(): String{
+        return "SBT collection of subscriptions for current user.";
+    }
+    override fun collectionName(): String{
+        return beginString().concat("User ").concat(self.nickname == null?beginString().concat("id").concat(self.userId.toString()).toString():self.nickname!!).concat(" subscriptions").toString();
+    }
 
     // wallet -> (owner user contract) -> (subscription user contract) (reserves amount) -> (subscription contract) -> (global profit contract) -> excess
     receive(m: ExternalSubscribeToUser){
@@ -89,7 +101,9 @@ trait SubscriptionCommunicator with IUser, Ownable, UserPerformable, ProfitCommu
 
 
     //levels setter
-
+    override fun at(index: Int): Address{
+        return contractAddress(self.getMySubscription(index));
+    }
     receive(m: SubscriptionSetLevels){
         self.requireOwner();
         self.subscriptionsData.levels = m.levels;

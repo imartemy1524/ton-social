@@ -3,7 +3,7 @@ import "./user.tact";
 import "./nft/user-nfts.tact";
 import "./achievement-master.tact";
 import "./profit/profit-communicator.tact";
-
+import "./nft/DNS/index.tact";
 message ChangeRegisterAmount{
     amount: Int as coins;
 }
@@ -13,10 +13,16 @@ struct StringData{
 }
 contract Master with OwnableTransferable, MasterUserBans, NftCollection{
     override const CollectionName: String = "Test";//"NetoTon users";
-    override const CollectionDescription: String = "Users on NetoTon blockchain, each represented by a unique NFT";
+    override fun collectionDescription(): String{
+        return beginString()
+            .concat("Collection of ")
+            .concat(self.lastUserId.toString())
+            .concat(" users on NetoTon blockchain, each represented by a unique NFT")
+            .toString();
+    }
     //TODO
     override const LogoURL: String = "https://i.imgur.com/P8tmkRB.png"; //readFile("./static/collection.jpg", "binary");
-    override const MartketplaceURL: String = "getgems.io";
+    override const MartketplaceURL: String = "marketplace.netoton.ton";
     override const storageReserve: Int = ton("0.1");
     //TODO
 //    override const DefaultUserAvatar: String = "https://i.imgur.com/AVgzcgn.png";
@@ -31,11 +37,31 @@ contract Master with OwnableTransferable, MasterUserBans, NftCollection{
         self.lastUserId = 0;
     }
     receive(deploy: Deploy) {
+        self.requireOwner();
         let state = initOf ProfitCalculator(myAddress());
-        self.forward(contractAddress(state), DeployProfitCalculator{
-            initData: self.getAchievementData(),
-            body: MintAchievementMessage{excessTo: sender()}.toCell()
-        }.toCell(), false, state);
+        send(SendParameters{
+            to: contractAddress(state),
+            body: DeployProfitCalculator{
+                excessTo: self.owner,
+            }.toCell(),
+            value: ton("0.15"),
+            bounce: false,
+            code: state.code,
+            data: state.data,
+            mode: SendIgnoreErrors
+        });
+        state = initOf AchivementMaster(myAddress());
+        send(SendParameters{
+            to: contractAddress(state),
+            body: MintAchievementMessage{
+                excessTo: self.owner,
+            }.toCell(),
+            value: ton("0.3"),
+            bounce: true,
+            code: state.code,
+            data: state.data,
+            mode: SendIgnoreErrors
+        });
     }
     inline fun getAchievementData(): StateInit{
         return initOf AchivementMaster(myAddress());
