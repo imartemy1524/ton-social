@@ -28,9 +28,16 @@ inline fun dnsResolveWebsiteTonStorage(name: Int): Cell{
 
 
 inline fun validateNickName(slice: Slice): Bool{
+    // should be byte array
+    require(slice.bits() % 8 == 0, "Invalid nickname");
+    // should be less than 32 bytes length
+    require(slice.bits() < 8 * 32, "Invalid nickname");
+    // should be more than 0 bytes length
+    require(slice.bits() > 0, "Invalid nickname");
+
     //does not starts with "-"
-    require(slice.loadUint(8) != 45, "Invalid nickname");
-    //does not starts with "nft"
+    require(slice.preloadUint(8) != 45, "Invalid nickname");
+    //does not starts with "domain"
     require(!slice.startsWithDomain(), "System reserved nickname");
     //does not starts with "id"
     require(!slice.startsWithId(), "System reserved nickname");

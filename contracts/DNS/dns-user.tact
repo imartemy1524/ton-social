@@ -4,8 +4,12 @@ message ExternalValidateNickname{
 
 
 trait DnsUser with IUser, DNSResolver, NicknameItemFindable, Ownable, Excessable{
-    blockedDNS: Bool;
+    userId: Int;
     nickname: String?;
+    owner: Address;
+
+
+    blockedDNS: Bool;
     nicknameCollection: Address;
     override fun doResolveDNS(subdomainFull: Slice, category: Int): DNSResolveResult {
         let dict: map<Int as uint256, Cell> = emptyMap();
@@ -82,7 +86,7 @@ trait DnsUser with IUser, DNSResolver, NicknameItemFindable, Ownable, Excessable
         )
     }
 
-    bounced(m: bounced<InternalLinkNicknameToAccount>){
+    bounced(m: InternalLinkNicknameToAccount){
         self.blockedDNS = false;
     }
 }

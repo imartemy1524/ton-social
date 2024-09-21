@@ -2,16 +2,6 @@ import "./nft-structs.tact";
 import "./metadata.tact";
 import "../utils/json.tact";
 
-inline fun setImage(data: map<Int, ElString>, avatar: String): map<Int, ElString>{
-    //starts with http
-    if(avatar.asSlice().preloadUint(32)== 0b01101000011101000111010001110000){
-        data.set(sha256("image"), ElString{ value: avatar});
-    } else {
-        data.set(sha256("image_data"), ElString{ value: avatar});
-    }
-    return data;
-}
-
 trait NftItem with Masterable, Ownable, IUser, Blockable{
     const ComputeFee: Int = ton("0.011");
     blocked: Bool;

@@ -55,12 +55,12 @@ trait DnsItem with DNSResolver, Ownable, Masterable{
     receive(m: InternalLinkNicknameToAccount){
         self.requireOwner();
         self.linked = true;
-        self.reply(InternalLinkNicknamePong{nickname: self.nickname});
+        self.reply(InternalLinkNicknamePong{nickname: self.nickname}.toCell());
     }
     receive(m: InternalDeleteNicknameToAccount){
         self.requireOwner();
         self.linked = false;
-        self.reply(InternalDeleteNicknamePong{newNickname: m.newNickname, oldNickname: self.nickname});
+        self.reply(InternalDeleteNicknamePong{newNickname: m.newNickname, oldNickname: self.nickname}.toCell());
     }
 }
 

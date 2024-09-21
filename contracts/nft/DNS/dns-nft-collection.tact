@@ -1,7 +1,6 @@
-
+import "./auction.tact";
 @interface("org.tact-lang.contract.dns.v0")
-trait DnsNFTCollection with Masterable, OwnableTransferable{
-    master: Address;
+trait DnsNFTCollection with OwnableTransferable{
     owner: Address;
     abstract const CollectionName: String;
     abstract const LogoURL: String;

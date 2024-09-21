@@ -20,6 +20,8 @@ extends fun stringToInt(self: Slice): Int {
 
 // Trait to resolve TON Dns Master queries
 trait DnsCollection with DNSResolver{
+    isPointerToADNL: Bool;
+    websiteId: Int;
     abstract fun getMasterContract(id: Int): Address;
     //original domain could be smthng like "profile.user-nickname.net.ton
     //subdomain - \0user-nickname\0maybesomethingelse\0
@@ -32,7 +34,7 @@ trait DnsCollection with DNSResolver{
         if (subdomainFull.bits() == 0) {
             //return link to adnl website
             let siteRecord = self.website();
-            let walletRecord = dnsResolveWallet(self.master);
+            let walletRecord = dnsResolveWallet(self.getMasterContract((1 << 64) - 1));
             let dict: map<Int as uint256, Cell> = emptyMap();
             dict.set(sha256("wallet"), walletRecord);
             dict.set(sha256("site"), siteRecord);
@@ -45,15 +47,18 @@ trait DnsCollection with DNSResolver{
             //starts with "id"
             if(subdomain.startsWithId()){
                 //pass reolver to master contract
+                subdomain.skipBits(16);
                 prefix = 0;
-                maped.set(sha256("dns_next_resolver"), dnsResolveNext(self.getMasterContract()));
+                let ID = subdomain.stringToInt();
+
+                maped.set(sha256("dns_next_resolver"), dnsResolveNext(self.getMasterContract(ID)));
             }
             //starts with "domain" - reference to self
             else if(subdomain.startsWithDomain() && subdomain.bits() == 48){
                 maped.set(sha256("wallet"), dnsResolveWallet(myAddress()));
             }
             else{
-                let resolvedDomain = self.resolveSubDomain(subdomain, "");
+                let resolvedDomain = self.resolveSubDomain(subdomain);
                 maped.set(sha256("dns_next_resolver"), resolvedDomain);
             }
         }
@@ -63,17 +68,16 @@ trait DnsCollection with DNSResolver{
         return dnsResolveResult(prefix, maped, category);
     }
     inline fun website(): Cell{
-        return self.isPointerToADNL ? dnsResolveWebsiteADNL(self.adnlLink) : dnsResolveWebsiteTonStorage(self.adnlLink)
+        return self.isPointerToADNL ? dnsResolveWebsiteADNL(self.websiteId) : dnsResolveWebsiteTonStorage(self.websiteId)
     }
 
     //subDomain - "user-nickname"
-    //prefixLength - length of the subdomain
     inline fun resolveSubDomain(subdomain: Slice): Cell {
         //"user-nickname" should be extracted
         let referenceAddress = self.at(subdomain.hash());
         return dnsResolveNext(referenceAddress);
     }
 
-    abstract inline fun at(domainHash: Cell): Address;
+    abstract fun at(domainHash: Int): Address;
 
 }
