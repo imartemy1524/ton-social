@@ -1,6 +1,6 @@
 
 @interface("org.tact-lang.contract.dns.v0")
-trait DnsCollection with Masterable, OwnableTransferable{
+trait DnsNFTCollection with Masterable, OwnableTransferable{
     master: Address;
     owner: Address;
     abstract const CollectionName: String;

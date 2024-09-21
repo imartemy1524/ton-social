@@ -23,3 +23,54 @@ inline fun dnsResolveWebsiteTonStorage(name: Int): Cell{
 }
 
 
+
+
+
+
+inline fun validateNickName(slice: Slice): Bool{
+    //does not starts with "-"
+    require(slice.loadUint(8) != 45, "Invalid nickname");
+    //does not starts with "nft"
+    require(!slice.startsWithDomain(), "System reserved nickname");
+    //does not starts with "id"
+    require(!slice.startsWithId(), "System reserved nickname");
+    //does not starts with "owner"
+    require(!slice.startsWithOwner(), "System reserved nickname");
+//    if(slice.startsWithId()){
+//        slice.skipBits(16);
+//        let bitShouldNotBeInteger = slice.loadUint(8);
+//        require((bitShouldNotBeInteger >= 97 && bitShouldNotBeInteger <= 122), "Invalid nickname");
+//    }
+
+    repeat(slice.bits() / 8){
+        let char = slice.loadUint(8);
+        //check that char in range [a-z0-9-]
+        require((char >= 48 && char <= 57) || (char >= 97 && char <= 122) || char == 45, "Invalid nickname");
+    }
+    return true;
+}
+
+
+//string starts with "id"
+extends inline fun startsWithOwner(self: Slice): Bool{
+    return self.bits() >= 40 && self.preloadUint(40) == 0b0110111101110111011011100110010101110010;
+}
+//string starts with "id"
+extends inline fun startsWithId(self: Slice): Bool{
+    return self.bits() >= 16 && self.preloadUint(16) == 0b0110100101100100;
+}
+
+//string starts with "nft"
+extends inline fun startsWithDomain(self: Slice): Bool{
+    return self.bits() >= 48 && self.preloadUint(48) == 0b011001000110111101101101011000010110100101101110;
+}
+
+
+inline fun dnsResolveResult(prefix: Int, dict: map<Int as uint256, Cell>, category: Int): DNSResolveResult{
+
+    if category == 0 {
+        return DNSResolveResult{prefix, record: dict.asCell()};
+    }
+    //for now no more subdomains allowed
+    return DNSResolveResult{prefix, record: null};
+}

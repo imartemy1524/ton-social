@@ -6,7 +6,7 @@ message SetWebisteId{
     websiteId: Int;
     isPointerToADNL: Bool;
 }
-contract NicknamesCollection with DnsMaster, DnsCollection, Deployable, OwnableTransferable{
+contract NicknamesCollection with DnsCollection, DnsNFTCollection, Deployable, OwnableTransferable{
     master: Address;
     owner: Address;
 
@@ -94,14 +94,4 @@ contract NicknamesCollection with DnsMaster, DnsCollection, Deployable, OwnableT
         }
         require(context().value >= ton("1") + self.FEES);
     }
-}
-
-
-inline fun validateNickName(slice: Slice): Bool{
-    repeat(slice.bits() / 8){
-        let char = slice.loadUint(8);
-        //check that char in range [a-z0-9-]
-        require((char >= 48 && char <= 57) || (char >= 97 && char <= 122) || char == 45, "Invalid nickname");
-    }
-    return true;
 }

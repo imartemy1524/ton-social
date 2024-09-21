@@ -1,55 +1,36 @@
 import "@stdlib/dns";
 
+trait DnsMaster with DNSResolver, UserPerformable, Ownable{
+    owner: Address;
 
-// Trait to resolve TON Dns Master queries
-trait DnsMaster with DNSResolver{
-    //original domain could be smthng like "profile.user-nickname.net.ton
-    //subdomain - \0user-nickname\0maybesomethingelse\0
-    //category - sha256("wallet") || sha256("site") || sha256("storage") || sha256("dns_next_resolver")
-    override fun doResolveDNS(subdomain: Slice, category: Int): DNSResolveResult {
-
-        // Self-domain resolving - no subdomain found (someone enters ".neto.ton" or "neto.ton")
-        if (subdomain.bits() == 0) {
-            //return link to adnl website
-            let siteRecord = self.website();
-            let walletRecord = dnsResolveWallet(self.master);
+    override fun doResolveDNS(subdomainFull: Slice, category: Int): DNSResolveResult {
+        if (subdomainFull.bits() == 0) {
             let dict: map<Int as uint256, Cell> = emptyMap();
-            dict.set(sha256("wallet"), walletRecord);
-            dict.set(sha256("site"), siteRecord);
+            dict.set(sha256("wallet"), dnsResolveWallet(myAddress()));
 
-            // category == 0 - return all possible records
             if category == 0 {
                 return DNSResolveResult{prefix: 0, record: dict.asCell()};
             }
             return DNSResolveResult{prefix: 0, record: dict.get(category)};
         }
-
-        // remove subdomain from the slice (neto\user-nickname\0....) -> (user-nickname\0....)
-        let subdomain = dnsExtractTopDomain(subdomain);
-
-        // Resolve subdomain
-        let resolvedDomain = self.resolveSubDomain(subdomain, "");
         let maped: map<Int as uint256, Cell> = emptyMap();
-        maped.set(sha256("dns_next_resolver"), resolvedDomain);
-        // category == 0 - return all possible records
-        if category == 0{
-            return DNSResolveResult{prefix: subdomain.bits(), record: maped.asCell()};
+        let subdomain = dnsExtractTopDomain(subdomainFull);
+        let prefix = subdomain.bits();
+        //starts with "id"
+        if(subdomain.startsWithId()){
+            subdomain.skipBits(16);
+            let idNumber = subdomain.stringToInt();
+            let address = self.userContractAddress(idNumber);
+            maped.set(sha256("dns_next_resolver"), dnsResolveNext(address));
         }
-        return DNSResolveResult{prefix: subdomain.bits(), record: resolvedDomain};
-    }
-    inline fun website(): Cell{
-        return self.isPointerToADNL ? dnsResolveWebsiteADNL(self.adnlLink) : dnsResolveWebsiteTonStorage(self.adnlLink)
-    }
+        //starts with "owner"
+        else if(subdomain.startsWithOwner() && subdomain.bits() == 5*8){
+            maped.set(sha256("wallet"), dnsResolveWallet(self.owner));
+        }
 
-    //subDomain - "user-nickname"
-    //category - sha256("wallet") || sha256("site") || sha256("storage") || sha256("dns_next_resolver")
-    //prefixLength - length of the subdomain
-    inline fun resolveSubDomain(subdomain: Slice): Cell {
-        //"user-nickname" should be extracted
-        let referenceAddress = self.at(subdomain.hash());
-        return dnsResolveNext(referenceAddress);
+        if category == 0 {
+            return DNSResolveResult{prefix, record: maped.asCell()};
+        }
+        return DNSResolveResult{prefix, record: maped.get(category)};
     }
-
-    abstract inline fun at(domainHash: Cell): Address;
-
 }
