@@ -1,16 +1,20 @@
+import "./types.tact";
 message ExternalValidateNickname{
     nickname: String;
 }
+message TransferNickname{
+    nickname: String;
+    transfer: Transfer;
+}
 
-
-trait DnsUser with IUser, DNSResolver, NicknameItemFindable, Ownable, Excessable{
+trait DnsUser with IUser, DNSResolverMy, NicknameItemFindable, Ownable, Excessable{
     userId: Int;
     nickname: String?;
     owner: Address;
 
 
     blockedDNS: Bool;
-    nicknameCollection: Address;
+    nicknameCollection: Address?;
     override fun doResolveDNS(subdomainFull: Slice, category: Int): DNSResolveResult {
         let dict: map<Int as uint256, Cell> = emptyMap();
         let skip = 0;
@@ -19,16 +23,19 @@ trait DnsUser with IUser, DNSResolver, NicknameItemFindable, Ownable, Excessable
             dict.set(sha256("wallet"), dnsResolveWallet(myAddress()));
         }
         else{
+            skip = subdomainFull.bits();
             let subdomain = dnsExtractTopDomain(subdomainFull);
-            skip = subdomain.bits();
             //starts with "owner"
             if(subdomain.startsWithOwner() && subdomain.bits() == 5*8){
-                let dict: map<Int as uint256, Cell> = emptyMap();
-                dict.set(sha256("wallet"), dnsResolveWallet(myAddress()));
+                dict.set(sha256("wallet"), dnsResolveWallet(self.owner));
+            }
+            if(subdomain.startsWithDomain() && subdomain.bits() == 6*8 && self.nickname != null){
+                let address = contractAddress(self.nickNameContractAt(self.nickname!!));
+                dict.set(sha256("wallet"), dnsResolveWallet(address));
             }
             //TODO: add post-id, subscription-id, etc.
         }
-        return dnsResolveResult(0, dict, category);
+        return dnsResolveResult(skip, dict, category);
 
     }
 
@@ -36,25 +43,25 @@ trait DnsUser with IUser, DNSResolver, NicknameItemFindable, Ownable, Excessable
 
     receive(m: ExternalValidateNickname){
         self.requireOwner();
-        require(self.blockedDNS == false, 101);
+        require(self.blockedDNS == false, "Blocked");
         self.blockedDNS = true;
         if(self.nickname == null){
             self.__setNickname(m.nickname);
         }
         else{
             //unlink nickname if it exits, and then in response call __setNickname
-            require(context().value >= ton("0.12"), 102);
+            require(context().value >= ton("0.12"), "Not enough funds");
             self.forward(
-                contractAddress(self.nickNameContractAt(self.nickname)),
-                InternalDeleteNicknameToAccount{newNickname: m.nickname},
+                contractAddress(self.nickNameContractAt(self.nickname!!)),
+                InternalDeleteNicknameToAccount{newNickname: m.nickname}.toCell(),
                 true,
                 null
             )
         }
     }
     receive(m: InternalDeleteNicknamePong){
-        require(sender() == self.nickNameContractAt(m.oldNickname), 103);
-        require(self.blockedDNS == true, 103);
+        require(sender() == contractAddress(self.nickNameContractAt(m.oldNickname)), "Invalid sender");
+        require(self.blockedDNS == true, "Blocked");
         self.nickname = null;
         if(m.newNickname == ""){
             self.blockedDNS = false;
@@ -68,8 +75,8 @@ trait DnsUser with IUser, DNSResolver, NicknameItemFindable, Ownable, Excessable
         self.blockedDNS = false;
     }
     receive(m: InternalLinkNicknamePong){
-        require(sender() == self.nickNameContractAt(m.nickname), 103);
-        require(self.blockedDNS == true, 103);
+        require(sender() == contractAddress(self.nickNameContractAt(m.nickname)), "Invalid sender");
+        require(self.blockedDNS == true, "Blocked");
         self.blockedDNS = false;
         self.nickname = m.nickname;
         self.excess(self.owner, "ok");
@@ -77,16 +84,27 @@ trait DnsUser with IUser, DNSResolver, NicknameItemFindable, Ownable, Excessable
 
 
     fun __setNickname(nickname: String){
-        require(context().value >= ton("0.05"), 102);
+        require(context().value >= ton("0.05"), "Not enough funds");
         self.forward(
             contractAddress(self.nickNameContractAt(nickname)),
-            InternalLinkNicknameToAccount{fromUserId: self.userId},
+            InternalLinkNicknameToAccount{fromUserId: self.userId}.toCell(),
             true,
             null
         )
     }
 
     bounced(m: InternalLinkNicknameToAccount){
+        self.blockedDNS = false;
+    }
+    receive(m: TransferNickname){
+        require(context().value >= ton("0.05"), "Not enough funds");
+        require(!self.blockedDNS, "should not be blocked!");
+        require(self.nickname == null || m.nickname != self.nickname, "To transfer NFT you should fi");
+        //TODO: think about requires above more carefully
+        self.forward(contractAddress(self.nickNameContractAt(m.nickname)), m.transfer.toCell(), true, null);
+    }
+    bounced(m: bounced<Transfer>){
+        //TODO: is this even safe, to unblock without verifying... ???
         self.blockedDNS = false;
     }
 }

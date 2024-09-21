@@ -12,7 +12,7 @@ message SubscriptionSetLevels{
 }
 
 
-trait SubscriptionCommunicator with IUser, Ownable, UserPerformable, ProfitCommunicator, Exitable, Excessable, AchievementRecieveableSubscription, UserSubscriptionCollection {
+trait SubscriptionCommunicator with IUser, Ownable, UserPerformable, ProfitCommunicator, Exitable, Excessable, AchievementRecieveableSubscription, UserSubscriptionCollection, Blockable {
     virtual const minSubscriptionFee: Int = ton("0.3");
     subscriptionsData: UserSubscriptionsData;
     nickname: String?;
@@ -22,6 +22,7 @@ trait SubscriptionCommunicator with IUser, Ownable, UserPerformable, ProfitCommu
     profitAddress: Address;
     receivedAchievements: Int;
     avatar: String?;
+    blocked: Bool;
 
     override fun subscriptionsCount(): Int{
         return self.subscriptionsData.toMeCount;
@@ -36,6 +37,7 @@ trait SubscriptionCommunicator with IUser, Ownable, UserPerformable, ProfitCommu
 
     // wallet -> (owner user contract) -> (subscription user contract) (reserves amount) -> (subscription contract) -> (global profit contract) -> excess
     receive(m: ExternalSubscribeToUser){
+        self.requireNotBlocked();
         self.requireOwner();
         require(m.subscribeToUserId != self.userId, "can't subscribe to yourself");
         require(context().value >= self.minSubscriptionFee, "not enough funds to subscribe");
@@ -53,6 +55,7 @@ trait SubscriptionCommunicator with IUser, Ownable, UserPerformable, ProfitCommu
     }
 
     receive(m: InternalStartSubscription){
+        self.requireNotBlocked();
         self.requireSenderIsUser(m.fromUserId);
         let level = self.subscriptionsData.levels.get(m.level);
         require(level != null, "level not found");
@@ -105,6 +108,7 @@ trait SubscriptionCommunicator with IUser, Ownable, UserPerformable, ProfitCommu
         return contractAddress(self.getMySubscription(index));
     }
     receive(m: SubscriptionSetLevels){
+        self.requireNotBlocked();
         self.requireOwner();
         self.subscriptionsData.levels = m.levels;
     }

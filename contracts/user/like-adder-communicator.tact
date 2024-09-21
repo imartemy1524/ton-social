@@ -5,12 +5,13 @@ message UserAddLike{
 }
 
 
-trait LikeAdderCommunicator with Masterable, Ownable, AchievementRecieveableLikes{
+trait LikeAdderCommunicator with Masterable, Ownable, AchievementRecieveableLikes, Blockable{
     //fields from AchievemenetRecieveable
     nickname: String?;
     userId: Int;
     receivedAchievements: Int;
     achievementMinterAddress: Address;
+    blocked: Bool;
 
     //own fields
     likesCount: Int;
@@ -20,6 +21,7 @@ trait LikeAdderCommunicator with Masterable, Ownable, AchievementRecieveableLike
     virtual const MinLikeFee: Int = ton("0.2");
     //Adds like to (Contract(m.to) instanceof LikeableObject)
     receive(m: UserAddLike){
+        self.requireNotBlocked();
         self.requireOwner();
         require(context().value >= self.MinLikeFee, "Value must be >= 0.1");
         let to: StateInit = initOf UserLike(self.master, m.to, self.getUserId());
@@ -44,6 +46,7 @@ trait LikeAdderCommunicator with Masterable, Ownable, AchievementRecieveableLike
         );
     }
     receive(m: ExcessFromLike){
+        self.requireNotBlocked();
         self.checkLikeAchievements(true);
     }
     abstract inline fun getUserId(): Int;

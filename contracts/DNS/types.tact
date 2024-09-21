@@ -78,6 +78,15 @@ inline fun dnsResolveResult(prefix: Int, dict: map<Int as uint256, Cell>, catego
     if category == 0 {
         return DNSResolveResult{prefix, record: dict.asCell()};
     }
+    let record = dict.get(category);
+    if record == null {
+        record = dict.get(sha256("dns_next_resolver"));
+    }
+
     //for now no more subdomains allowed
-    return DNSResolveResult{prefix, record: null};
+    return DNSResolveResult{prefix, record};
 }
+
+
+
+

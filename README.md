@@ -34,15 +34,15 @@ Now, what **account** can do?
 - [x] Users receive SBT-achievements, when they're done some actions (add 1,10,100,... likes, posts, subscriptions, comments)
 - [x] Users can subscribe to other users, and receive special SBT-achievements for this (the "master" of this SBT is user contract). Users can set its own "subscriptions levels". One can easily check if user is subscribed to another user, until which time, for which amount etc.
 - [x]  Users can have unique nickname in the system and can be found by this nickname.
-- [ ] Users can navigate through ton DNS:
-  - `neto.ton` -> Master smart contract
-  - `domain.neto.ton` -> Nicknames collection contract
-  - `id123.neto.ton` -> `id123` account
-    - `owner.id123.neto.ton` -> `id123` account's owner
-  - `pavel-durov.neto.ton` -> Account in netoton network
-    - `owner.pavel-durov.neto.ton` -> `pavel-durov` account's owner
-  - `domain.pavel-durov.neto.ton` - > `pavel-durov` NFT domain contract
-  - 
+- [x] Users can navigate through ton DNS:
+  - [x] `neto.ton` -> Master smart contract
+  - [x] `domain.neto.ton` -> Nicknames collection contract
+  - [x] `id123.neto.ton` -> `id123` account
+    - [x] `owner.id123.neto.ton` -> `id123` account's owner
+  - [x] `pavel-durov.neto.ton` -> Account in netoton network
+    - [x] `owner.pavel-durov.neto.ton` -> `pavel-durov` account's owner
+    - [ ] `domain.pavel-durov.neto.ton` - > `pavel-durov` NFT domain contract
+
 
 
 

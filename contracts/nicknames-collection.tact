@@ -9,6 +9,7 @@ import "./abstract/parentable.tact";
 import "./abstract/exitable.tact";
 import "./abstract/excessable.tact";
 import "./utils/json.tact";
+import "./utils/string.tact";
 //import "./user/iuser.tact";
 message SetWebisteId{
     websiteId: Int;
@@ -27,7 +28,7 @@ message ExternalAdd{
 }
 
 
-contract NicknamesCollection with DnsCollection, DnsNFTCollection, OwnableTransferable{
+contract NicknamesCollection with DnsCollection, DnsNFTCollection, OwnableTransferable, Exitable{
     owner: Address;
     nicknamesCount: Int = 0;
     //ADNL link to website OR ADNL link to ton storage
@@ -57,24 +58,8 @@ contract NicknamesCollection with DnsCollection, DnsNFTCollection, OwnableTransf
         let dataBin = self.initOfIT(domainHash);
         let nftAddress = contractAddress(dataBin);
         //not an owner - creating nickname costs a lot
-        if(sender() != self.owner){
-            self.ensureFee(slice);
-            //create auction
-            let auctionAddress = createAuction(nftAddress, InitialBid{bidder: sender(), value:0 }, sender());
-            //deploy nft
-            send(SendParameters{
-            value: ton("0.05"),
-            bounce: false,
-            body: InitizlizeNickname{nickname: slice.asString(), owner: auctionAddress}.toCell(),
-            to: nftAddress,
-            data: dataBin.data,
-            code: dataBin.code
-            });
-        }
-        //owner - can easly for free create nicknames
-        else {
-            self.forward(nftAddress, InitizlizeNickname{nickname: slice.asString(), owner: sender()}.toCell(), true, null);
-        }
+        self.forward(nftAddress, InitializeNickname{nickname: slice.asString(), owner: sender(), amount: sender() != self.owner ? self.ensureFee(slice) : 0}.toCell(), true, dataBin);
+
     }
 
     //helper functions
@@ -82,10 +67,10 @@ contract NicknamesCollection with DnsCollection, DnsNFTCollection, OwnableTransf
         let i = self.initOfIT(domainHash);
         return contractAddress(i);
     }
-    inline fun initOfIT(domainHash: Int): StateInit{
+    inline fun initOfIT(domainHash: Int): StateInit {
         return initOf NicknamesCollectionItem(myAddress(), domainHash);
     }
-    inline fun ensureFee(slice: Slice): Int{
+    inline fun ensureFee(slice: Slice): Int {
         //require 1 ton for slice > 6 bytes length
         let i: Int = ton("1");
         if(slice.bits() == 8){
@@ -115,7 +100,7 @@ contract NicknamesCollection with DnsCollection, DnsNFTCollection, OwnableTransf
         require(context().value >= i + self.FEES, "Not enough funds");
         return i;
     }
-    override fun getMasterContract(id: Int): Address{
+    override fun getMasterContract(id: Int): Address {
         //binary search in self.masters
         return getMasterContractFromMaster(self.masters, id)!!;
     }
@@ -135,6 +120,10 @@ contract NicknamesCollection with DnsCollection, DnsNFTCollection, OwnableTransf
         self.requireOwner();
         self.websiteId = m.websiteId;
         self.isPointerToADNL = m.isPointerToADNL;
+    }
+    receive(m: ExcessFromBid){
+        self.forward(self.owner, null, false, null);
+        self.exitWithoutSaving();
     }
 }
 //binary search LAST element, which startUserId < id

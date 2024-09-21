@@ -57,6 +57,7 @@ trait PostCommunicator with Ownable, Masterable, Blockable, AchievementRecieveab
     }
 
     receive(m: ExcessFromPost){
+        self.requireNotBlocked();
         //send post achievement
         self.checkPostsAchievements(true);
     }

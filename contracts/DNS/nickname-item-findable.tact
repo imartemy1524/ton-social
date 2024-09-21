@@ -1,9 +1,9 @@
 
 
 trait NicknameItemFindable{
-    nicknameCollection: Address;
+    nicknameCollection: Address?;
     fun nickNameContractAt(nickname: String): StateInit{
         let hash = nickname.asSlice().hash();
-        return initOf NicknamesCollectionItem(self.nicknameCollection, hash);
+        return initOf NicknamesCollectionItem(self.nicknameCollection!!, hash);
     }
 }

@@ -11,21 +11,20 @@ trait NftItem with Masterable, Ownable, IUser, Blockable{
     owner: Address;
     avatar: String?;
     receive(msg: GetStaticData){
-        let ctx: Context = context();
+        let ctx = context();
         send(SendParameters {
         to: ctx.sender,
             value: 0,
             mode: SendRemainingValue,  // (return msg amount except gas fees)
             bounce: true,
-            body: ReportStaticData{
-            query_id: msg.query_id, index_id: self.userId, collection: self.master}.toCell()
+            body: ReportStaticData{ query_id: msg.query_id, index_id: self.userId, collection: self.master}.toCell()
         });
     }
 
     receive(msg: Transfer){
         self.requireNotBlocked();
         require(sender() == self.owner || sender() == self.master, "Only owner or master can transfer this NFT");
-        let ctx: Context = context(); // Reference: https://docs.tact-lang.org/language/ref/common#context
+        let ctx = context(); // Reference: https://docs.tact-lang.org/language/ref/common#context
 
         self.owner = msg.new_owner;  // change current owner to the new_owner
         //f@cking work with comissions... IDK, how it works

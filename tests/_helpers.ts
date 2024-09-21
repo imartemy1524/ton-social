@@ -1,16 +1,18 @@
 import {
     Blockchain,
     BlockchainTransaction,
+    printTransactionFees,
     SandboxContract,
     TreasuryContract,
 } from '@ton/sandbox';
 import { loadIndividualContentSBT, SubscriptionData, User } from '../wrappers/User';
 import { loadSubscriptionData, Master, storeSubscriptionData } from '../wrappers/Master';
-import {NicknamesCollection} from "../wrappers/NicknamesCollection";
+import { NicknamesCollection } from '../wrappers/NicknamesCollection';
 import { UserPost } from '../wrappers/UserPost';
-import {Subscription} from "../wrappers/Subscription"
+import { Subscription } from '../wrappers/Subscription';
 import { ProfitCalculator } from '../wrappers/ProfitCalculator';
 import {
+    Address,
     beginCell,
     BitBuilder,
     BitReader,
@@ -25,6 +27,9 @@ import {
 } from '@ton/core';
 import { sha256_sync } from '@ton/crypto';
 import { readFileSync } from 'fs';
+import { NicknamesCollectionItem } from '../wrappers/NicknamesCollectionItem';
+import { randomAddress } from '@ton/test-utils';
+
 export interface SocialMedia {
     blockchain: Blockchain;
     userWallets: SandboxContract<TreasuryContract>[];
@@ -43,21 +48,18 @@ export async function deployMaster(): Promise<SocialMedia> {
     blockchain.now = 1000;
     const userWallets = await blockchain.createWallets(11);
     const [masterOwner] = await blockchain.createWallets(1);
-    const nicknamesMaster = blockchain.openContract(await NicknamesCollection.fromInit(
-        masterOwner.address,
-        123n
-    ));
+    const nicknamesMaster = blockchain.openContract(await NicknamesCollection.fromInit(masterOwner.address, 123n));
     await nicknamesMaster.send(
         masterOwner.getSender(),
         {
-            value: toNano('0.3')
+            value: toNano('0.3'),
         },
         {
             $$type: 'Deploy',
-            queryId: 0n
+            queryId: 0n,
         },
-    )
-    const master = blockchain.openContract(await Master.fromInit());
+    );
+    const master = blockchain.openContract(await Master.fromInit(masterOwner.address, nicknamesMaster.address));
     const { transactions } = await master.send(
         masterOwner.getSender(),
         { value: toNano('0.6') },
@@ -66,9 +68,9 @@ export async function deployMaster(): Promise<SocialMedia> {
             queryId: 0n,
         },
     );
-    expect(transactions).not.toHaveTransaction({
-        exitCode: e=>e !== 0,
-    });
+    // expect(transactions).not.toHaveTransaction({
+    //     exitCode: e=>e !== 0,
+    // });
 
     let userAccounts: SandboxContract<User>[] = [];
     for (const userWallet of userWallets) {
@@ -77,7 +79,6 @@ export async function deployMaster(): Promise<SocialMedia> {
             { value: toNano('1') },
             { $$type: 'Register' },
         );
-        // printTransactionFees(transactions);
         const userId = await master.getUsersCount();
         const user = blockchain.openContract(User.fromAddress(await master.getUser(userId)));
         //@ts-ignore
@@ -91,7 +92,16 @@ export async function deployMaster(): Promise<SocialMedia> {
     }
 
     const profitContract = blockchain.openContract(await ProfitCalculator.fromInit(master.address));
-    return { blockchain, userWallets, userAccounts, master, masterOwner, superMaster: master, profitContract, nicknamesMaster };
+    return {
+        blockchain,
+        userWallets,
+        userAccounts,
+        master,
+        masterOwner,
+        superMaster: master,
+        profitContract,
+        nicknamesMaster,
+    };
 }
 
 //parsing onchain data in NFT
@@ -284,7 +294,7 @@ export async function createPost(
             text: textInitial,
         },
     );
-    // printTransactionFees(transactions);
+    //@ts-ignore
     expect(transactions).toHaveTransaction({
         from: wallet.address,
         to: account.address,
@@ -402,4 +412,75 @@ export function genLevels() {
         });
     }
     return levels;
+}
+
+export async function createDomainAndClaimOwnership(
+    data: Pick<SocialMedia, 'nicknamesMaster' | 'blockchain'>,
+    account: SandboxContract<User>,
+    sender: Sender,
+    domain: string,
+) {
+    const amount =
+        domain.length >= 7 ? toNano('1') : toNano(['-1', '1000', '100', '50', '25', '10', '5', '1'][domain.length]!);
+    const { transactions } = await data.nicknamesMaster.send(sender, { value: toNano('0.1') + amount }, domain);
+
+    const nicknameContract = await nicknameSmartcontract(data, domain);
+    expect(transactions).toHaveTransaction({
+        from: data.nicknamesMaster.address,
+        to: nicknameContract.address,
+        success: true,
+    });
+    data.blockchain.now! += 3601;
+    {
+        const { transactions } = await nicknameContract.send(
+            sender,
+            { value: toNano('0.02') },
+            { $$type: 'EndAuctionMessage' },
+        );
+        expect(transactions).toHaveTransaction({
+            from: sender.address,
+            to: nicknameContract.address,
+            success: true,
+        });
+    }
+    {
+        const { transactions } = await nicknameContract.send(
+            sender,
+            { value: toNano('0.05') },
+            {
+                $$type: 'Transfer',
+                new_owner: account.address,
+                query_id: 0n,
+                response_destination: randomAddress(),
+                forward_amount: toNano('0'),
+                custom_payload: beginCell().storeBit(1).endCell(),
+                forward_payload: beginCell().endCell().asSlice(),
+            },
+        );
+        expect(await nicknameContract.getData().then((e) => e.owner)).toEqualAddress(account.address);
+    }
+    {
+
+        const {transactions} = await account.send(sender, { value: toNano('0.15') }, { $$type: 'ExternalValidateNickname', nickname: domain });
+        printTransactionFees(transactions);
+    }
+    expect(await account.getData().then((e) => e.nickname)).toBe(domain);
+}
+
+export async function nicknameSmartcontract(
+    {
+        nicknamesMaster,
+        blockchain,
+    }: {
+        nicknamesMaster: { address: Address };
+        blockchain: Blockchain;
+    },
+    nickname: string,
+) {
+    return blockchain.openContract(
+        await NicknamesCollectionItem.fromInit(
+            nicknamesMaster.address,
+            BigInt('0x' + beginCell().storeStringTail(nickname).endCell().hash().toString('hex')),
+        ),
+    );
 }

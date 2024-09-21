@@ -1,9 +1,11 @@
 import "@stdlib/ownable";
 import "./user.tact";
+import "./utils/string.tact";
 import "./nft/user-nfts.tact";
 import "./achievement-master.tact";
 import "./profit/profit-communicator.tact";
 import "./nft/DNS/index.tact";
+import "./DNS/dns-master.tact";
 message ChangeRegisterAmount{
     amount: Int as coins;
 }
@@ -11,7 +13,7 @@ message(0x12345678) Register{}
 struct StringData{
     data: String;
 }
-contract Master with OwnableTransferable, MasterUserBans, NftCollection{
+contract Master with OwnableTransferable, MasterUserBans, NftCollection, DnsMaster{
     override const CollectionName: String = "Test";//"NetoTon users";
     override fun collectionDescription(): String{
         return beginString()
@@ -29,12 +31,12 @@ contract Master with OwnableTransferable, MasterUserBans, NftCollection{
     //10%
     royaltyNumberator: Int as uint16 = 10_00;
     owner: Address;
-    registerAmount: Int as coins;
-    lastUserId: Int as uint64;
-    init(){
-        self.owner = sender();
-        self.registerAmount = ton("1");
-        self.lastUserId = 0;
+    registerAmount: Int as coins = ton("1");
+    lastUserId: Int as uint64 = 0;
+    nicknameCollection: Address;
+    init(owner: Address, nicknameCollection: Address){
+        self.owner = owner;
+        self.nicknameCollection = nicknameCollection;
     }
     receive(deploy: Deploy) {
         self.requireOwner();
@@ -87,6 +89,7 @@ contract Master with OwnableTransferable, MasterUserBans, NftCollection{
                 excessTo: self.owner,
                 achievementAddress: contractAddress(self.getAchievementData()),
                 profitAddress: contractAddress(initOf ProfitCalculator(myAddress())),
+                nicknameCollection: self.nicknameCollection
             }.toCell(),
             true,
             user
