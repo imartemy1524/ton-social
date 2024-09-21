@@ -255,12 +255,14 @@ const dnsResolveImpl = async (
 };
 
 export class DnsContractsDeployer {
-    MasterCode = compile('DnsResolver');
+    MasterCode: Cell|null = null;
 
-    constructor(private readonly sender: SandboxContract<TreasuryContract>) {}
-
-    async deploy(masterAddress: Address): Promise<{ address: Address, transactions: BlockchainTransaction[] }> {
-        const code = await this.MasterCode;
+    constructor() {}
+    async prepare(){
+        this.MasterCode = await compile('DnsResolver');
+    }
+    async deploy(sender: SandboxContract<any>, masterAddress: Address): Promise<{ address: Address, transactions: BlockchainTransaction[] }> {
+        const code = this.MasterCode!;
         const data = beginCell()
             .storeAddress(masterAddress) //address of ".ton" dns resolver
             .storeAddress(null)
@@ -270,7 +272,7 @@ export class DnsContractsDeployer {
             code,
             data,
         });
-        const { transactions } = await this.sender.send({
+        const { transactions } = await sender.send({
             value: toNano('0.5'),
             to,
             bounce: false,

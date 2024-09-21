@@ -86,3 +86,7 @@ inline fun dnsResolveResult(prefix: Int, dict: map<Int as uint256, Cell>, catego
     //for now no more subdomains allowed
     return DNSResolveResult{prefix, record};
 }
+
+
+
+

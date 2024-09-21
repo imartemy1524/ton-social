@@ -39,9 +39,9 @@ Now, what **account** can do?
   - [x] `domain.neto.ton` -> Nicknames collection contract
   - [x] `id123.neto.ton` -> `id123` account
     - [x] `owner.id123.neto.ton` -> `id123` account's owner
-  - [ ] `pavel-durov.neto.ton` -> Account in netoton network
-    - [ ] `owner.pavel-durov.neto.ton` -> `pavel-durov` account's owner
-  - [ ] `domain.pavel-durov.neto.ton` - > `pavel-durov` NFT domain contract
+  - [x] `pavel-durov.neto.ton` -> Account in netoton network
+    - [x] `owner.pavel-durov.neto.ton` -> `pavel-durov` account's owner
+    - [ ] `domain.pavel-durov.neto.ton` - > `pavel-durov` NFT domain contract
 
 
 

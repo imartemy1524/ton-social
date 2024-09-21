@@ -32,6 +32,7 @@ struct UserData{
     likesCount: Int ;
     receivedAchievements: Int;
     subscriptionsData: UserSubscriptionsData;
+    nickname: String?;
 }
 
 
@@ -90,7 +91,8 @@ contract User with Excessable, BlockableByMaster, PostCommunicator, CommentCommu
             postsCount: self.postsCount,
             likesCount: self.likesCount,
             receivedAchievements: self.receivedAchievements,
-            subscriptionsData: self.subscriptionsData
+            subscriptionsData: self.subscriptionsData,
+            nickname: self.nickname
         };
     }
 

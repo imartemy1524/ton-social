@@ -92,6 +92,6 @@ describe('UserNft', () => {
         }
 
         //ownership should be transfered
-        expect(newOwner).toEqualAddress(newOwnerAfterTransfer);
+        expect(newOwner).toEqualAddress(newOwnerAfterTransfer!);
     });
 });

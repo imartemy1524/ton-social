@@ -1,4 +1,4 @@
-import "@stdlib/dns";
+import "./dns-resolver.tact";
 message InternalLinkNicknamePong{
     nickname: String;
 }
@@ -12,28 +12,29 @@ message InternalDeleteNicknamePong{
     newNickname: String;
     oldNickname: String;
 }
-
-
-trait DnsItem with DNSResolver, Ownable, Masterable{
-    owner: Address;
+trait DnsItem with DNSResolverMy, Masterable{
+    owner: Address?;
     master: Address;
     linked: Bool;
     nickname: String;
+    inline fun requireOwner(){
+        require( self.owner != null && sender() == self.owner!!, "Invalid sender");
+    }
     //original domain could be smthng like "profile.user-nickname.net.ton
-    //subdomain - \0maybesomethingelse\0
+    //subdomain - maybesomethingelse\0
     //category - sha256("wallet") || sha256("site") || sha256("storage") || sha256("dns_next_resolver")
     override fun doResolveDNS(subdomainOld: Slice, category: Int): DNSResolveResult {
+        require(self.isInitialized(), "Not initialized");
         let dict: map<Int as uint256, Cell> = emptyMap();
         let prefix = 0;
         // Self-domain resolving - no subdomain found (someone enters ".neto.ton" or "neto.ton")
-        if (subdomainOld.bits() == 0) {
-            //return link to adnl website
-            let walletRecord = dnsResolveWallet(self.master);
-            dict.set(sha256("wallet"), walletRecord);
-            let v = dnsResolveNext(self.master);
-            dict.set(sha256("site"), v);
-            // IDK here, because if I want to return reference for "site" to parent contract, what should I do? Should i include "dns_resolve_next", or no?
-            dict.set(sha256("dns_resolve_next"), v);
+        if (subdomainOld.empty()) {
+            if(self.owner != null && self.linked){
+                dump("Resolved empty");
+                dump(self.owner!!);
+                dict.set(sha256("dns_next_resolver"), dnsResolveNext(self.owner!!));
+            }
+            dict.set(sha256("site"), dnsResolveNext(self.master));
 
         }
         else{
@@ -44,9 +45,11 @@ trait DnsItem with DNSResolver, Ownable, Masterable{
                 prefix = subdomainOld.bits();
                 dict.set(sha256("wallet"), dnsResolveWallet(myAddress()));
             }
-            else{
+            else if(self.owner != null && self.linked){
                 prefix = 0;
+                dict.set(sha256("dns_next_resolver"), dnsResolveNext(self.owner!!));
             }
+
         }
         return dnsResolveResult(prefix, dict, category);
     }
@@ -55,12 +58,15 @@ trait DnsItem with DNSResolver, Ownable, Masterable{
     receive(m: InternalLinkNicknameToAccount){
         self.requireOwner();
         self.linked = true;
-        self.reply(InternalLinkNicknamePong{nickname: self.nickname}.toCell());
+        self.reply(InternalLinkNicknamePong{ nickname: self.nickname}.toCell());
     }
     receive(m: InternalDeleteNicknameToAccount){
         self.requireOwner();
         self.linked = false;
-        self.reply(InternalDeleteNicknamePong{newNickname: m.newNickname, oldNickname: self.nickname}.toCell());
+        self.reply(InternalDeleteNicknamePong{ newNickname: m.newNickname, oldNickname: self.nickname}.toCell());
     }
+
+    abstract fun isInitialized(): Bool;
+
 }
 

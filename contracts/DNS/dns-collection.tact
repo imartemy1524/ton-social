@@ -1,8 +1,7 @@
-import "@stdlib/dns";
 
 
 // Trait to resolve TON Dns Master queries
-trait DnsCollection with DNSResolver{
+trait DnsCollection with DNSResolverMy{
     isPointerToADNL: Bool;
     websiteId: Int;
     abstract fun getMasterContract(id: Int): Address;
@@ -41,7 +40,8 @@ trait DnsCollection with DNSResolver{
                 maped.set(sha256("wallet"), dnsResolveWallet(myAddress()));
             }
             else{
-                let resolvedDomain = self.resolveSubDomain(subdomain);
+                let nextAddr = self.at(subdomain.hash());
+                let resolvedDomain = dnsResolveNext(nextAddr);
                 maped.set(sha256("dns_next_resolver"), resolvedDomain);
             }
         }
@@ -54,12 +54,7 @@ trait DnsCollection with DNSResolver{
         return self.isPointerToADNL ? dnsResolveWebsiteADNL(self.websiteId) : dnsResolveWebsiteTonStorage(self.websiteId)
     }
 
-    //subDomain - "user-nickname"
-    inline fun resolveSubDomain(subdomain: Slice): Cell {
-        //"user-nickname" should be extracted
-        let referenceAddress = self.at(subdomain.hash());
-        return dnsResolveNext(referenceAddress);
-    }
+
 
     abstract fun at(domainHash: Int): Address;
 

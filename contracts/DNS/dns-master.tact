@@ -1,6 +1,5 @@
-import "@stdlib/dns";
 
-trait DnsMaster with DNSResolver, UserPerformable, Ownable{
+trait DnsMaster with DNSResolverMy, UserPerformable, Ownable{
     owner: Address;
 
     override fun doResolveDNS(subdomainFull: Slice, category: Int): DNSResolveResult {
@@ -9,8 +8,7 @@ trait DnsMaster with DNSResolver, UserPerformable, Ownable{
             dict.set(sha256("wallet"), dnsResolveWallet(myAddress()));
 
             if category == 0 {
-                return DNSResolveResult{
-                prefix: 0, record: dict.asCell()};
+                return DNSResolveResult{ prefix: 0, record: dict.asCell()};
             }
             return DNSResolveResult{
             prefix: 0, record: dict.get(category)};
