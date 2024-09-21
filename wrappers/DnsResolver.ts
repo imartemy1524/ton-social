@@ -195,7 +195,6 @@ const dnsResolveImpl = async (
 ): Promise<Cell | Address | null | ADNLAddress | StorageBagId> => {
     const len = rawDomainBytes.length * 8;
 
-    console.log('dnsResolveImpl ', dnsAddress.toString(), Buffer.from(rawDomainBytes).toString(), category);
     const domainCell = beginCell();
     domainCell.storeBits(
         new BitString(Buffer.from(rawDomainBytes), 0, rawDomainBytes.byteLength * rawDomainBytes.BYTES_PER_ELEMENT * 8),
