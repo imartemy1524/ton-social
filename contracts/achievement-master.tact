@@ -8,7 +8,7 @@ contract AchivementMaster with AchivementsMinter, AchievementCollection, Blockab
     override const CollectionName: String = "NetoTon Achievements";
     override const CollectionDescription: String = "Collection of SBT achievements, which automatically minted by the system for NetoTon users";
     override const LogoURL: String = readFile("./achievements/collectionLogo.svg", "utf8");
-    override const MartketplaceURL: String = "getgems.io";
+    override const MartketplaceURL: String = "marketplace.netoton.ton";
     override const storageReserve: Int = ton("0.1");
 
 

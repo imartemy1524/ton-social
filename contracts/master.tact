@@ -22,7 +22,7 @@ contract Master with OwnableTransferable, MasterUserBans, NftCollection{
     }
     //TODO
     override const LogoURL: String = "https://i.imgur.com/P8tmkRB.png"; //readFile("./static/collection.jpg", "binary");
-    override const MartketplaceURL: String = "getgems.io";
+    override const MartketplaceURL: String = "marketplace.netoton.ton";
     override const storageReserve: Int = ton("0.1");
     //TODO
 //    override const DefaultUserAvatar: String = "https://i.imgur.com/AVgzcgn.png";

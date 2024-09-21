@@ -2,14 +2,14 @@
 
 As there aren't any good articles in the internet about how TON DNS works, I decided to write one.
 
-There is a [standard](https://github.com/ton-blockchain/TIPs/issues/81), which I still don't understand, thus I will try to explain it in my own words.
+There is a [standard](https://github.com/ton-blockchain/TIPs/issues/81), which I still don't understand in the way, it presented in the article, thus I will try to explain it in my own words.
 
 ## What is TON DNS
 
-TON DNS is a decentralized domain name system for TON blockchain. It allows to "register" domain names and 'link' them to next objects (domain may be linked too few of them at the same time).:
+TON DNS is a decentralized domain name system on TON blockchain. It allows to "register" domain names and 'link' them to next objects (domain may be linked to few of them at the same time).:
 
--  Other wallet addresses (category=`sha256("wallet")`)
--  Websites, hosted either in ADNL network OR in TON Storage (category=`sha256("site")`)
+-  Wallet addresses (category=`sha256("wallet")`)
+-  Websites, hosted either in [ADNL network](https://docs.ton.org/learn/networking/adnl) OR in [TON Storage](https://blog.ton.org/ton-storage) (category=`sha256("site")`)
 -  Ton Storage object (category=`sha256("storage")`)
 -  Redirects (category=`sha256("dns_next_resolver")`) - to "redirect" the request to another smart contract (for example, one can build subdomains this way, by "cutting" parts of the domain by ".", and "redirecting" resolve request to other smart contracts)
 
