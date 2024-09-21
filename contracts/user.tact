@@ -6,7 +6,7 @@ import "./post.tact";
 import "./user/comment-communicator.tact";
 import "./user/like-adder-communicator.tact";
 import "./user/iuser.tact";
-import "./subscribtion.tact";
+import "./subscription.tact";
 import "./subscriptions/index.tact";
 //system messages
 message InitUserInternal{

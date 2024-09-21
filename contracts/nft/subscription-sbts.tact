@@ -80,7 +80,7 @@ trait SbtItem with Masterable, UserOwnable, Exitable{
     master: Address;
     validUntil: Int;
     revokedAt: Int ;
-    subscribtion: SubscriptionData?;
+    subscription: SubscriptionData?;
     virtual fun getSystemFee(oldValue: Int): Int{
         //return 2% of the value
         return oldValue/50;
@@ -186,7 +186,7 @@ trait SbtItem with Masterable, UserOwnable, Exitable{
     }
     inline fun getContent(): Cell{
         return IndividualContentSBT{
-            data: self.subscribtion,
+            data: self.subscription,
             expiredAt: self.validUntil
         }.toCell()
     }

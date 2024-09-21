@@ -1,12 +1,15 @@
 import {
     Blockchain,
     BlockchainTransaction,
-    printTransactionFees,
     SandboxContract,
     TreasuryContract,
 } from '@ton/sandbox';
 import { loadIndividualContentSBT, SubscriptionData, User } from '../wrappers/User';
 import { loadSubscriptionData, Master, storeSubscriptionData } from '../wrappers/Master';
+import {NicknamesCollection} from "../wrappers/NicknamesCollection";
+import { UserPost } from '../wrappers/UserPost';
+import {Subscription} from "../wrappers/Subscription"
+import { ProfitCalculator } from '../wrappers/ProfitCalculator';
 import {
     beginCell,
     BitBuilder,
@@ -21,12 +24,7 @@ import {
     toNano,
 } from '@ton/core';
 import { sha256_sync } from '@ton/crypto';
-import { readFile } from 'node:fs/promises';
 import { readFileSync } from 'fs';
-import { UserPost } from '../build/Master/tact_UserPost';
-import { ProfitCalculator } from '../build/Master/tact_ProfitCalculator';
-import { Subscription } from '../build/Master/tact_Subscription';
-
 export interface SocialMedia {
     blockchain: Blockchain;
     userWallets: SandboxContract<TreasuryContract>[];
@@ -35,6 +33,7 @@ export interface SocialMedia {
     masterOwner: SandboxContract<TreasuryContract>;
     master: SandboxContract<Master>;
     profitContract: SandboxContract<ProfitCalculator>;
+    nicknamesMaster: SandboxContract<NicknamesCollection>;
 }
 
 export const DefaultAvatar = readFileSync(__dirname + '/../contracts/static/avatar.jpg');
@@ -44,6 +43,20 @@ export async function deployMaster(): Promise<SocialMedia> {
     blockchain.now = 1000;
     const userWallets = await blockchain.createWallets(11);
     const [masterOwner] = await blockchain.createWallets(1);
+    const nicknamesMaster = blockchain.openContract(await NicknamesCollection.fromInit(
+        masterOwner.address,
+        123n
+    ));
+    await nicknamesMaster.send(
+        masterOwner.getSender(),
+        {
+            value: toNano('0.3')
+        },
+        {
+            $$type: 'Deploy',
+            queryId: 0n
+        },
+    )
     const master = blockchain.openContract(await Master.fromInit());
     const { transactions } = await master.send(
         masterOwner.getSender(),
@@ -78,7 +91,7 @@ export async function deployMaster(): Promise<SocialMedia> {
     }
 
     const profitContract = blockchain.openContract(await ProfitCalculator.fromInit(master.address));
-    return { blockchain, userWallets, userAccounts, master, masterOwner, superMaster: master, profitContract };
+    return { blockchain, userWallets, userAccounts, master, masterOwner, superMaster: master, profitContract, nicknamesMaster };
 }
 
 //parsing onchain data in NFT

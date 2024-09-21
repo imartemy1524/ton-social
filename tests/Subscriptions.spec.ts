@@ -1,10 +1,5 @@
-import { SandboxContract } from '@ton/sandbox';
 import '@ton/test-utils';
 import { SocialMedia, deployMaster, setLevels, createSubscription, genLevels, decodeNftDataOnchain } from './_helpers';
-import { beginCell, Dictionary, DictionaryValue, fromNano, Sender, toNano } from '@ton/core';
-import { loadIndividualContentSBT, SubscriptionData, User } from '../wrappers/User';
-import { Subscription } from '../build/Master/tact_Subscription';
-import { loadSubscriptionData, storeSubscriptionData } from '../build/Master/tact_Achivement';
 
 
 describe('Subscription', () => {

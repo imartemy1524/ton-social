@@ -1,4 +1,4 @@
-import "../nft/subscribtion-sbts.tact";
+import "../nft/subscription-sbts.tact";
 
 struct IndividualContentAchivement{
 //    userId: Int as uint64;

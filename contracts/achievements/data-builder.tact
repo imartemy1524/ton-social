@@ -48,7 +48,7 @@ inline extends fun activityType(self: IndividualContentAchivement, amount: Int):
         return(amount == 1 ? "comment written" : "comments written");
     }
     else if(self.type <= 0x40){
-        return(amount == 1 ? "subscribtion gived" : "subscribtions gived");
+        return(amount == 1 ? "subscription gived" : "subscriptions gived");
     }
     return "";
 }

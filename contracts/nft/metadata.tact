@@ -81,7 +81,7 @@ inline fun nftTextToCellAsMultiref(input: String): Cell {
     .concat("\x00")
     //   write input as string (s.t. cell refs would be recalculated)
     .concat(input);
-    return builder.toString().asSlice().asCell();
+    return builder.toCell();
 
 }
 //Store nft text as a dict cell

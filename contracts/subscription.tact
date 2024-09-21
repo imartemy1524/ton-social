@@ -1,4 +1,4 @@
-import "./nft/subscribtion-sbts.tact";
+import "./nft/subscription-sbts.tact";
 import "./profit-calculator.tact";
 import "./abstract/exitable.tact";
 message SubscriptionInit{
@@ -28,7 +28,7 @@ contract Subscription with SbtItem, UserPerformable {
     master: Address;
     validUntil: Int as uint64 = 0;
     revokedAt: Int as uint64 = 0;
-    subscribtion: SubscriptionData? = null;
+    subscription: SubscriptionData? = null;
 //    blocked: Bool = false;
 
 
@@ -41,19 +41,19 @@ contract Subscription with SbtItem, UserPerformable {
     //requires min amount + 0.1 TON
     receive(m: SubscriptionInit){
         require(self.revokedAt == 0, "Revoked");
-        require(sender() == self.userContractAddress(self.userToId), "only owner contract can initialize subscribtion");
+        require(sender() == self.userContractAddress(self.userToId), "only owner contract can initialize subscription");
         require(m.userFromId == self.ownerUserId, "wrong user id");
         let newValidUntil = now() + m.data.paymentPeriod;
         if(self.validUntil > now()){
             //extend payment period on the amount of the previous payment
             newValidUntil += self.validUntil - now();
         }
-        self.subscribtion = m.data;
+        self.subscription = m.data;
         self.validUntil = newValidUntil;
         self.forward(
             m.profitAddress,
             ProfitMessageSubscription{
-                action: PROFIT_SUBSCRIBTION,
+                action: PROFIT_SUBSCRIPTION,
                 //keep 1% of the payment
                 keepAmount: m.data.paymentAmount * 1/100,
                 subscriptionFromUserId: self.ownerUserId,
@@ -64,7 +64,7 @@ contract Subscription with SbtItem, UserPerformable {
         );
     }
     override inline fun isNftInitialized(): Bool{
-        return self.validUntil > now() && self.subscribtion != null && self.revokedAt == 0;
+        return self.validUntil > now() && self.subscription != null && self.revokedAt == 0;
     }
 
     //sends profits to user and system, after that system pongs message back (ProfitMessagePongSubscription) and if destroy is true, then contract will be destroyed, otherwise, excess would be send

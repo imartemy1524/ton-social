@@ -1,7 +1,7 @@
 import { Address, fromNano, toNano } from '@ton/core';
 import '@ton/test-utils';
 import { UserLike } from '../wrappers/UserLike';
-import { Comment } from '../build/Master/tact_Comment';
+import { Comment } from '../wrappers/PostComment';
 import { SocialMedia, deployMaster, createPost } from './_helpers';
 type Tree = {value: Address, children: Tree[]};
 

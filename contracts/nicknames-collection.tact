@@ -26,7 +26,8 @@ message ExternalAdd{
     master: OneMaster;
 }
 
-contract NicknamesCollection with DnsCollection, DnsNFTCollection, Deployable, OwnableTransferable{
+
+contract NicknamesCollection with DnsCollection, DnsNFTCollection, OwnableTransferable{
     owner: Address;
     nicknamesCount: Int = 0;
     //ADNL link to website OR ADNL link to ton storage
@@ -48,16 +49,7 @@ contract NicknamesCollection with DnsCollection, DnsNFTCollection, Deployable, O
     init(owner: Address, randomSeed: Int){
         self.owner = owner;
     }
-
-    receive(m: SetWebisteId){
-        self.requireOwner();
-        self.websiteId = m.websiteId;
-        self.isPointerToADNL = m.isPointerToADNL;
-    }
-    override fun at(domainHash: Int): Address {
-        let i = self.initOfIT(domainHash);
-        return contractAddress(i);
-    }
+    //deploy new DNS NFT
     receive(m: String){
         let slice = m.asSlice();
         validateNickName(slice);
@@ -71,18 +63,24 @@ contract NicknamesCollection with DnsCollection, DnsNFTCollection, Deployable, O
             let auctionAddress = createAuction(nftAddress, InitialBid{bidder: sender(), value:0 }, sender());
             //deploy nft
             send(SendParameters{
-                value: ton("0.05"),
-                bounce: false,
-                body: InitizlizeNickname{nickname: slice.asString(), owner: auctionAddress}.toCell(),
-                to: nftAddress,
-                data: dataBin.data,
-                code: dataBin.code
+            value: ton("0.05"),
+            bounce: false,
+            body: InitizlizeNickname{nickname: slice.asString(), owner: auctionAddress}.toCell(),
+            to: nftAddress,
+            data: dataBin.data,
+            code: dataBin.code
             });
         }
         //owner - can easly for free create nicknames
         else {
             self.forward(nftAddress, InitizlizeNickname{nickname: slice.asString(), owner: sender()}.toCell(), true, null);
         }
+    }
+
+    //helper functions
+    override fun at(domainHash: Int): Address {
+        let i = self.initOfIT(domainHash);
+        return contractAddress(i);
     }
     inline fun initOfIT(domainHash: Int): StateInit{
         return initOf NicknamesCollectionItem(myAddress(), domainHash);
@@ -123,8 +121,20 @@ contract NicknamesCollection with DnsCollection, DnsNFTCollection, Deployable, O
     }
     //add master address
     receive(m: ExternalAdd){
+        self.requireOwner();
         require(self.masters.size == 0 || self.masters.masters.get(self.masters.size - 1)!!.startUserId < m.master.startUserId, "Invalid master found");
         self.masters.add(m.master);
+    }
+
+    receive(m: Deploy){
+        self.requireOwner();
+    }
+
+    //update website ID
+    receive(m: SetWebisteId){
+        self.requireOwner();
+        self.websiteId = m.websiteId;
+        self.isPointerToADNL = m.isPointerToADNL;
     }
 }
 //binary search LAST element, which startUserId < id

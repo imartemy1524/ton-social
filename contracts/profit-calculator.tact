@@ -1,4 +1,4 @@
-const PROFIT_SUBSCRIBTION: Int = 1;
+const PROFIT_SUBSCRIPTION: Int = 1;
 message(0x77777777) ProfitMessageSubscription{
     //PROFIT_* const
     action: Int as uint8;
@@ -21,7 +21,7 @@ contract ProfitCalculator with Masterable, Exitable, UserPerformable, Excessable
     init(master: Address){
         self.master = master;
         self.counters = emptyMap();
-        self.counters.set(PROFIT_SUBSCRIBTION, 0);
+        self.counters.set(PROFIT_SUBSCRIPTION, 0);
         self.counters.set(0, 0);
     }
     receive(deploy: DeployProfitCalculator) {
@@ -33,7 +33,7 @@ contract ProfitCalculator with Masterable, Exitable, UserPerformable, Excessable
     receive(m: ProfitMessageSubscription){
         let fromSubscription = initOf Subscription(self.master, m.subscriptionFromUserId, m.subscriptionToUserId);
         require(sender() == contractAddress(fromSubscription), "only subscription contract can send profit message");
-        self.counters.set(m.action, self.counters.get(PROFIT_SUBSCRIBTION)!! + 1);
+        self.counters.set(m.action, self.counters.get(PROFIT_SUBSCRIPTION)!! + 1);
         //reserver keepAmount and pong message back
         nativeReserve(m.keepAmount, ReserveExact | ReserveAddOriginalBalance);
         send(SendParameters{

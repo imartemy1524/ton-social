@@ -1,7 +1,7 @@
 import '@ton/test-utils';
 import { SocialMedia, deployMaster } from './_helpers';
 
-describe('Achievement', () => {
+describe('Dns', () => {
     let data: SocialMedia;
     beforeEach(async () => {
         data = await deployMaster();
