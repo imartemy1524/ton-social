@@ -35,7 +35,6 @@ describe('Dns', () => {
         //achievement contract deployed with (actually after, but who cares) master.
     }, 20_000);
     it('should resolve *.id*.ntt domains', async () => {
-        console.log('Nickname master address: ', data.nicknamesMaster.address.toString());
         for (let i = 0; i < data.userAccounts.length; i++) {
             const ac = data.userAccounts[i];
             const { userId } = await ac.getData();
@@ -45,4 +44,14 @@ describe('Dns', () => {
             expect(ownerAddress).toEqualAddress(data.userWallets[i].address);
         }
     });
+    it('should resolve domain.ntt', async ()=>{
+        const domain = 'domain.ntt';
+        const address = await resolver.getWalletAddress(domain);
+        expect(address).toEqualAddress(data.nicknamesMaster.address);
+    })
+    it('should resolve .ntt', async ()=>{
+        const domain = 'ntt';
+        const address = await resolver.getWalletAddress(domain);
+        expect(address).toEqualAddress(data.master.address);
+    })
 });

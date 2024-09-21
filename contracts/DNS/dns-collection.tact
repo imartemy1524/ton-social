@@ -14,13 +14,12 @@ trait DnsCollection with DNSResolver{
         let prefix = 0;
 
         // Self-domain resolving - no subdomain found (someone enters "neto.ton")
-        if (subdomainFull.bits() == 0) {
+        if (subdomainFull.empty()) {
             //return link to adnl website
             let siteRecord = self.website();
             let walletRecord = dnsResolveWallet(self.getMasterContract((1 << 64) - 1));
-            let dict: map<Int as uint256, Cell> = emptyMap();
-            dict.set(sha256("wallet"), walletRecord);
-            dict.set(sha256("site"), siteRecord);
+            maped.set(sha256("wallet"), walletRecord);
+            maped.set(sha256("site"), siteRecord);
         }
         else{
             // remove subdomain from the slice (neto\user-nickname\0....) -> (user-nickname\0....)
@@ -37,6 +36,8 @@ trait DnsCollection with DNSResolver{
             }
             //starts with "domain" - reference to self
             else if(subdomain.startsWithDomain() && subdomain.bits() == 48){
+                prefix += 8;
+                //add the ending
                 maped.set(sha256("wallet"), dnsResolveWallet(myAddress()));
             }
             else{
