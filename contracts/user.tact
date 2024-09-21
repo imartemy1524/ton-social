@@ -40,7 +40,7 @@ struct UserData{
 const NullAddress: Address = address("UQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJKZ");
 
 
-contract User with OwnableTransferable, Excessable, BlockableByMaster, PostCommunicator, CommentCommunicator, LikeAdderCommunicator, IUser, NftItem, SubscriptionCommunicator, DnsUser{
+contract User with Excessable, BlockableByMaster, PostCommunicator, CommentCommunicator, LikeAdderCommunicator, NftItem, SubscriptionCommunicator, DnsUser{
     override const storageReserve: Int = ton("0.03");
 
     nickname: String? = null;

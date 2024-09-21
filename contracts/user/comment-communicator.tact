@@ -61,6 +61,7 @@ trait CommentCommunicator with Ownable, Blockable, Masterable, Exitable, Achieve
         self.exitWithoutSaving();
     }
     receive(m: ExcessFromComment){
+        self.requireNotBlocked();
         self.checkCommentAchievements(true);
     }
 
