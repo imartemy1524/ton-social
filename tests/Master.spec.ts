@@ -41,7 +41,7 @@ describe('Master', () => {
         expect(transactions).toHaveTransaction({
             from: data.userWallets[0].address,
             to: userAccounts[0].address,
-            success: false
+            success: false,
         });
 
         //unblock user0
@@ -58,7 +58,6 @@ describe('Master', () => {
         let { blocked: blockedAfter1After } = await userAccounts[1].getData();
         expect(blockedAfter0After).toBe(false);
         expect(blockedAfter1After).toBe(false);
-
 
         // the check is done inside beforeEach
         // blockchain and master are ready to use
@@ -77,8 +76,127 @@ describe('Master', () => {
         expect(transactions).toHaveTransaction({
             from: data.masterOwner.address,
             to: master.address,
-            success: true
+            success: true,
         });
         expect(await master.getOwner()).toEqualAddress(userAccounts[1].address);
     });
+    it('should disable register', async () => {
+        const { master } = data;
+        //disable registering
+        {
+            const { transactions } = await master.send(
+                data.masterOwner.getSender(),
+                { value: toNano('0.2') },
+                {
+                    $$type: 'SetRegisterable',
+                    registerable: false,
+                },
+            );
+
+            expect(transactions).toHaveTransaction({
+                from: data.masterOwner.address,
+                to: master.address,
+                success: true,
+            });
+        }
+        //try to register (should fail)
+        {
+            const { transactions } = await master.send(
+                data.userWallets[0].getSender(),
+                { value: toNano('2') },
+                {
+                    $$type: 'Register',
+                },
+            );
+            expect(transactions).toHaveTransaction({
+                from: data.userWallets[0].address,
+                to: master.address,
+                success: false,
+            });
+        }
+
+        //enable registering
+        {
+            const { transactions } = await master.send(
+                data.masterOwner.getSender(),
+                { value: toNano('0.2') },
+                {
+                    $$type: 'SetRegisterable',
+                    registerable: true,
+                },
+            );
+
+            expect(transactions).toHaveTransaction({
+                from: data.masterOwner.address,
+                to: master.address,
+                success: true,
+            });
+        }
+        //try to register (should success)
+        {
+            const { transactions } = await master.send(
+                data.userWallets[0].getSender(),
+                { value: toNano('1') },
+                {
+                    $$type: 'Register',
+                },
+            );
+            expect(transactions).toHaveTransaction({
+                from: data.userWallets[0].address,
+                to: master.address,
+                success: true,
+            });
+        }
+    });
+
+    it('should change register price', async () => {
+        // change register price
+        const { master } = data;
+        {
+            const { transactions } = await master.send(
+                data.masterOwner.getSender(),
+                { value: toNano('0.2') },
+                {
+                    $$type: 'ChangeRegisterAmount',
+                    amount: toNano('2'),
+                },
+            );
+            expect(transactions).toHaveTransaction({
+                from: data.masterOwner.address,
+                to: master.address,
+                success: true,
+            });
+        }
+        //try to register with old price
+        {
+            const { transactions } = await master.send(
+                data.userWallets[0].getSender(),
+                { value: toNano('1') },
+                {
+                    $$type: 'Register',
+                },
+            );
+            expect(transactions).toHaveTransaction({
+                from: data.userWallets[0].address,
+                to: master.address,
+                success: false,
+            });
+        }
+        //try to register with new price
+        {
+            const { transactions } = await master.send(
+                data.userWallets[0].getSender(),
+                { value: toNano('2') },
+                {
+                    $$type: 'Register',
+                },
+            );
+            expect(transactions).toHaveTransaction({
+                from: data.userWallets[0].address,
+                to: master.address,
+                success: true,
+            });
+        }
+
+    })
 });

@@ -49,17 +49,22 @@ export async function deployMaster(): Promise<SocialMedia> {
     const userWallets = await blockchain.createWallets(11);
     const [masterOwner] = await blockchain.createWallets(1);
     const nicknamesMaster = blockchain.openContract(await NicknamesCollection.fromInit(masterOwner.address, 123n));
+    const master = blockchain.openContract(await Master.fromInit(masterOwner.address, nicknamesMaster.address, 0n));
     await nicknamesMaster.send(
         masterOwner.getSender(),
         {
             value: toNano('0.3'),
         },
         {
-            $$type: 'Deploy',
-            queryId: 0n,
+            $$type: 'ExternalAdd',
+            master: {
+                address: master.address,
+                startUserId: 0n,
+                $$type: 'OneMaster',
+            },
         },
     );
-    const master = blockchain.openContract(await Master.fromInit(masterOwner.address, nicknamesMaster.address));
+
     const { transactions } = await master.send(
         masterOwner.getSender(),
         { value: toNano('0.6') },
@@ -460,8 +465,14 @@ export async function createDomainAndClaimOwnership(
         expect(await nicknameContract.getData().then((e) => e.owner)).toEqualAddress(account.address);
     }
     {
-
-        const {transactions} = await account.send(sender, { value: toNano('0.15') }, { $$type: 'ExternalValidateNickname', nickname: domain });
+        const { transactions } = await account.send(
+            sender,
+            { value: toNano('0.15') },
+            {
+                $$type: 'ExternalValidateNickname',
+                nickname: domain,
+            },
+        );
         printTransactionFees(transactions);
     }
     expect(await account.getData().then((e) => e.nickname)).toBe(domain);

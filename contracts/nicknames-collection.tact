@@ -28,7 +28,7 @@ message ExternalAdd{
 }
 
 
-contract NicknamesCollection with DnsCollection, DnsNFTCollection, OwnableTransferable, Exitable{
+contract NicknamesCollection with DnsCollection, DnsNFTCollection, OwnableTransferable, Exitable, Excessable{
     owner: Address;
     nicknamesCount: Int = 0;
     //ADNL link to website OR ADNL link to ton storage
@@ -109,10 +109,8 @@ contract NicknamesCollection with DnsCollection, DnsNFTCollection, OwnableTransf
         self.requireOwner();
         require(self.masters.size == 0 || self.masters.masters.get(self.masters.size - 1)!!.startUserId < m.master.startUserId, "Invalid master found");
         self.masters.add(m.master);
-    }
+        self.excess(sender(), "ok");
 
-    receive(m: Deploy){
-        self.requireOwner();
     }
 
     //update website ID
@@ -124,6 +122,9 @@ contract NicknamesCollection with DnsCollection, DnsNFTCollection, OwnableTransf
     receive(m: ExcessFromBid){
         self.forward(self.owner, null, false, null);
         self.exitWithoutSaving();
+    }
+    get fun masters(): Masters{
+        return self.masters;
     }
 }
 //binary search LAST element, which startUserId < id

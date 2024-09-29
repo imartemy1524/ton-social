@@ -116,7 +116,7 @@ const domainToBytes = (domain: string): Uint8Array => {
     });
 
     let rawDomain = arr.reverse().join('\0') + '\0';
-    if (rawDomain.length < 126) {
+    if (Math.random() > 0.5) {
         rawDomain = '\0' + rawDomain;
     }
 
@@ -140,7 +140,7 @@ const parseSmartContractAddressImpl = (cell: Slice, prefix0: number, prefix1: nu
  * @param cell  {Cell}
  * @return {Address|null}
  */
-const parseSmartContractAddressRecord = (cell: Slice) => {
+export const parseSmartContractAddressRecord = (cell: Slice) => {
     return parseSmartContractAddressImpl(cell, 0x9f, 0xd3);
 };
 
@@ -152,7 +152,7 @@ class StorageBagId {
  * @param cell  {Cell}
  * @return {Address|null}
  */
-const parseNextResolverRecord = (cell: Slice) => {
+export const parseNextResolverRecord = (cell: Slice) => {
     return parseSmartContractAddressImpl(cell, 0xba, 0x93);
 };
 const parseSiteRecord = (cell: Slice) => {
@@ -255,13 +255,21 @@ const dnsResolveImpl = async (
 };
 
 export class DnsContractsDeployer {
-    MasterCode: Cell|null = null;
+    MasterCode: Cell | null = null;
 
     constructor() {}
-    async prepare(){
+
+    async prepare() {
         this.MasterCode = await compile('DnsResolver');
     }
-    async deploy(sender: SandboxContract<any>, masterAddress: Address): Promise<{ address: Address, transactions: BlockchainTransaction[] }> {
+
+    async deploy(
+        sender: SandboxContract<any>,
+        masterAddress: Address,
+    ): Promise<{
+        address: Address;
+        transactions: BlockchainTransaction[];
+    }> {
         const code = this.MasterCode!;
         const data = beginCell()
             .storeAddress(masterAddress) //address of ".ton" dns resolver

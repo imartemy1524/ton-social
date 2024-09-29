@@ -26,6 +26,7 @@ trait DnsMaster with DNSResolverMy, UserPerformable, Ownable{
         //starts with "owner"
         else if(subdomain.startsWithOwner() && subdomain.bits() == 5*8){
             maped.set(sha256("wallet"), dnsResolveWallet(self.owner));
+            prefix += 8;
         }
         return dnsResolveResult(prefix, maped, category);
     }

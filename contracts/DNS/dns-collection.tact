@@ -31,7 +31,15 @@ trait DnsCollection with DNSResolverMy{
                 subdomain.skipBits(16);
                 prefix = 0;
                 let ID = subdomain.stringToInt();
-                maped.set(sha256("dns_next_resolver"), dnsResolveNext(self.getMasterContract(ID)));
+                let master = self.getMasterContract(ID);
+                dump(master.toString());
+                maped.set(sha256("dns_next_resolver"), dnsResolveNext(master));
+            }
+            else if(subdomain.startsWithMaster()){
+                subdomain.skipBits(48);
+                prefix = 48;
+                maped.set(sha256("dns_next_resolver"), dnsResolveNext(self.getMasterContract((1 << 64) - 1)));
+
             }
             //starts with "domain" - reference to self
             else if(subdomain.startsWithDomain() && subdomain.bits() == 48){

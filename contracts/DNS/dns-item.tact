@@ -30,8 +30,6 @@ trait DnsItem with DNSResolverMy, Masterable{
         // Self-domain resolving - no subdomain found (someone enters ".neto.ton" or "neto.ton")
         if (subdomainOld.empty()) {
             if(self.owner != null && self.linked){
-                dump("Resolved empty");
-                dump(self.owner!!);
                 dict.set(sha256("dns_next_resolver"), dnsResolveNext(self.owner!!));
             }
             dict.set(sha256("site"), dnsResolveNext(self.master));
