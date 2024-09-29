@@ -1,5 +1,5 @@
-import { printTransactionFees, SandboxContract } from '@ton/sandbox';
 import '@ton/test-utils';
+import { printTransactionFees, SandboxContract } from '@ton/sandbox';
 import { Achivement, AchivementMaster } from '../wrappers/Achievement';
 import { SocialMedia, deployMaster, createPost, decodeNftDataOnchain, DefaultAvatar } from './_helpers';
 import { toNano } from '@ton/core';

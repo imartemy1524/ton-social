@@ -43,6 +43,8 @@ inline fun validateNickName(slice: Slice): Bool{
     require(!slice.startsWithId(), "System reserved nickname");
     //does not starts with "owner"
     require(!slice.startsWithOwner(), "System reserved nickname");
+    //does not starts with "master"
+    require(!slice.startsWithMaster(), "System reserved nickname");
 //    if(slice.startsWithId()){
 //        slice.skipBits(16);
 //        let bitShouldNotBeInteger = slice.loadUint(8);
@@ -66,6 +68,9 @@ extends inline fun startsWithOwner(self: Slice): Bool{
 extends inline fun startsWithId(self: Slice): Bool{
     return self.bits() >= 16 && self.preloadUint(16) == 0b0110100101100100;
 }
+extends inline fun startsWithMaster(self: Slice): Bool{
+    return self.bits() >= 48 && self.preloadUint(48) == 0b011011010110000101110011011101000110010101110010;
+}
 
 //string starts with "nft"
 extends inline fun startsWithDomain(self: Slice): Bool{
@@ -75,12 +80,21 @@ extends inline fun startsWithDomain(self: Slice): Bool{
 
 inline fun dnsResolveResult(prefix: Int, dict: map<Int as uint256, Cell>, category: Int): DNSResolveResult{
 
+    let recordDef = dict.get(sha256("dns_next_resolver"));
     if category == 0 {
+        if( recordDef != null){
+            if(dict.get(sha256("wallet")) == null){
+                dict.set(sha256("wallet"), recordDef);
+            }
+            if(dict.get(sha256("site")) == null){
+                dict.set(sha256("site"), recordDef);
+            }
+        }
         return DNSResolveResult{prefix, record: dict.asCell()};
     }
     let record = dict.get(category);
     if record == null {
-        record = dict.get(sha256("dns_next_resolver"));
+        record = recordDef;
     }
 
     //for now no more subdomains allowed

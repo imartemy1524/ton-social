@@ -13,12 +13,13 @@ message(0x12345678) Register{}
 struct StringData{
     data: String;
 }
-contract Master with OwnableTransferable, MasterUserBans, NftCollection, DnsMaster{
+message SetRegisterable{registerable: Bool;}
+contract Master with OwnableTransferable, MasterUserBans, NftCollection, DnsMaster, Excessable{
     override const CollectionName: String = "Test";//"NetoTon users";
     override fun collectionDescription(): String{
         return beginString()
             .concat("Collection of ")
-            .concat(self.lastUserId.toString())
+            .concat((self.lastUserId - self.startUserId).toString())
             .concat(" users on NetoTon blockchain, each represented by a unique NFT")
             .toString();
     }
@@ -33,10 +34,14 @@ contract Master with OwnableTransferable, MasterUserBans, NftCollection, DnsMast
     owner: Address;
     registerAmount: Int as coins = ton("1");
     lastUserId: Int as uint64 = 0;
+    startUserId: Int as uint64 = 0;
+    registerable: Bool = true;
     nicknameCollection: Address;
-    init(owner: Address, nicknameCollection: Address){
+    init(owner: Address, nicknameCollection: Address, startUserId: Int){
         self.owner = owner;
         self.nicknameCollection = nicknameCollection;
+        self.startUserId = startUserId;
+        self.lastUserId = startUserId;
     }
     receive(deploy: Deploy) {
         self.requireOwner();
@@ -75,10 +80,17 @@ contract Master with OwnableTransferable, MasterUserBans, NftCollection, DnsMast
     receive(m: ChangeRegisterAmount){
         self.requireOwner();
         self.registerAmount = m.amount;
+        self.excess(sender(), "ok");
+    }
+    receive(m: SetRegisterable){
+        self.requireOwner();
+        self.registerable = m.registerable;
+        self.excess(sender(), "ok");
     }
 
     receive(m: Register){
         require(context().value >= self.registerAmount, "Not enough value");
+        require(self.registerable, "Register is disabled");
         self.lastUserId += 1;
         let user = initOf User(myAddress(), self.lastUserId);
         self.forward(
@@ -99,6 +111,9 @@ contract Master with OwnableTransferable, MasterUserBans, NftCollection, DnsMast
         return contractAddress(initOf User(myAddress(), userId));
     }
     get fun usersCount(): Int{
+        return self.lastUserId - self.startUserId;
+    }
+    get fun lastUserId(): Int{
         return self.lastUserId;
     }
     get fun achievement(): Address{

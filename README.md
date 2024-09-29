@@ -25,6 +25,7 @@ Now, what **account** can do?
 2. Other users can leave [comments](./contracts/comment.tact) to the post or to other comments (answering them).
 3. Users can [like](./contracts/abstract/likeable.tact) any [post](./contracts/post.tact) or [comments](./contracts/comment.tact) (in future, like can contain some value, to support user).
 4. Users can receive [achievements](./contracts/achievement.tact) (SBT) for doing actions.
+5. You can buy NFT with unique nickname (on auction) and "link" it to your account, s.t. it would be accessible by DNS domain `nickname.neto.ton` (for example, `pavel-durov.neto.ton`).
 
 ### Features
 
