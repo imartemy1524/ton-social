@@ -5,27 +5,30 @@ import {
     BitString,
     Cell,
     contractAddress,
+    Dictionary,
     Sender,
     Slice,
     toNano,
-    TupleItem,
+    TupleItem
 } from '@ton/core';
 import { sha256_sync } from '@ton/crypto';
 import { Blockchain, BlockchainTransaction, SandboxContract, TreasuryContract } from '@ton/sandbox';
 import { compile } from '@ton/blueprint';
 
-enum Category {
+export enum Category {
     DNS_CATEGORY_WALLET = 'wallet',
     DNS_CATEGORY_STORAGE = 'storage',
     DNS_CATEGORY_SITE = 'site',
     DNS_CATEGORY_NEXT_RESOLVER = 'next_resolver',
 }
 
+type AnsMap = Map<Category, StorageBagId | ADNLAddress | Address | null>;
+
 interface Provider {
     runGetMethod(
         address: Address,
         method: string,
-        stack: TupleItem[],
+        stack: TupleItem[]
     ): Promise<{
         stack: TupleItem[];
     }>;
@@ -34,8 +37,9 @@ interface Provider {
 export class DnsResolver {
     constructor(
         private readonly provider: Provider,
-        private readonly rootContract: Address,
-    ) {}
+        private readonly rootContract: Address
+    ) {
+    }
 
     public getWalletAddress(domain: string): Promise<Address | null> {
         return this.resolve(domain, Category.DNS_CATEGORY_WALLET, this.rootContract);
@@ -59,20 +63,26 @@ export class DnsResolver {
     private resolve(
         domain: string,
         category: Category.DNS_CATEGORY_WALLET,
-        rootContract: Address,
+        rootContract: Address
     ): Promise<Address | null>;
     private resolve(
         domain: string,
         category: Category.DNS_CATEGORY_STORAGE,
-        rootContract: Address,
+        rootContract: Address
     ): Promise<StorageBagId | null>;
     private resolve(
         domain: string,
         category: Category.DNS_CATEGORY_SITE,
-        rootContract: Address,
+        rootContract: Address
     ): Promise<ADNLAddress | StorageBagId | null>;
+    private resolve(domain: string, category: null, rootContract: Address): Promise<AnsMap>;
     private resolve(domain: string, category: Category | null, rootContract: Address) {
         return dnsResolveImpl(this.provider, rootContract, domainToBytes(domain), category, false);
+    }
+
+    async getAll(domain: string) {
+        const nextRoot = await this.resolve(domain.split('.')[domain.split('.').length - 1], Category.DNS_CATEGORY_WALLET, this.rootContract)!;
+        return this.resolve(domain.split('.').slice(0, domain.split('.').length-1).join('.'), null, nextRoot!);
     }
 }
 
@@ -145,7 +155,8 @@ export const parseSmartContractAddressRecord = (cell: Slice) => {
 };
 
 class StorageBagId {
-    constructor(public address: bigint) {}
+    constructor(public address: bigint) {
+    }
 }
 
 /**
@@ -191,17 +202,17 @@ const dnsResolveImpl = async (
     dnsAddress: Address,
     rawDomainBytes: Uint8Array,
     category: Category | null,
-    oneStep: boolean,
-): Promise<Cell | Address | null | ADNLAddress | StorageBagId> => {
+    oneStep: boolean
+): Promise<Cell | Address | null | ADNLAddress | StorageBagId | AnsMap> => {
     const len = rawDomainBytes.length * 8;
 
     const domainCell = beginCell();
     domainCell.storeBits(
-        new BitString(Buffer.from(rawDomainBytes), 0, rawDomainBytes.byteLength * rawDomainBytes.BYTES_PER_ELEMENT * 8),
+        new BitString(Buffer.from(rawDomainBytes), 0, rawDomainBytes.byteLength * rawDomainBytes.BYTES_PER_ELEMENT * 8)
     );
     const resultRaw = await provider.runGetMethod(dnsAddress, 'dnsresolve', [
         { type: 'slice', cell: domainCell.endCell() },
-        { type: 'int', value: toCategory(category) },
+        { type: 'int', value: toCategory(category) }
     ]);
     const result = resultRaw.stack;
     if (result.length !== 2) {
@@ -230,11 +241,44 @@ const dnsResolveImpl = async (
             return cell ? parseSiteRecord(cell.cell.beginParse()) : null;
         } else if (category === Category.DNS_CATEGORY_STORAGE) {
             return cell ? parseStorageBagIdRecord(cell.cell.beginParse()) : null;
+        } else if (category === null) {
+            const ans = cell.cell.beginParse().loadDictDirect(Dictionary.Keys.BigUint(256), Dictionary.Values.Cell());
+            const map: AnsMap = new Map();
+            if (ans.has(toCategory(Category.DNS_CATEGORY_WALLET)!)) {
+                const wallet = ans.get(toCategory(Category.DNS_CATEGORY_WALLET)!);
+                map.set(
+                    Category.DNS_CATEGORY_WALLET,
+                    wallet ? parseSmartContractAddressRecord(wallet.beginParse()) : null
+                );
+            }
+            if (ans.has(toCategory(Category.DNS_CATEGORY_SITE)!)) {
+                const site = ans.get(toCategory(Category.DNS_CATEGORY_SITE)!);
+                map.set(Category.DNS_CATEGORY_SITE, site ? parseSiteRecord(site.beginParse()) : null);
+            }
+            if (ans.has(toCategory(Category.DNS_CATEGORY_STORAGE)!)) {
+                const storage = ans.get(toCategory(Category.DNS_CATEGORY_STORAGE)!);
+                map.set(Category.DNS_CATEGORY_STORAGE, storage ? parseStorageBagIdRecord(storage.beginParse()) : null);
+            }
+            if (ans.has(toCategory(Category.DNS_CATEGORY_NEXT_RESOLVER)!)) {
+                const next = ans.get(toCategory(Category.DNS_CATEGORY_NEXT_RESOLVER)!);
+                map.set(Category.DNS_CATEGORY_NEXT_RESOLVER, next ? parseNextResolverRecord(next.beginParse()) : null);
+            }
+            return map;
         } else {
             throw new Error('invalid category');
         }
     } else {
-        const nextAddress = parseNextResolverRecord(cell.cell.beginParse());
+        let nextAddress: Address|null;
+        if (category)
+            nextAddress = parseNextResolverRecord(cell.cell.beginParse());
+        else {
+            const dict = cell.cell
+                .beginParse()
+                .loadDictDirect(Dictionary.Keys.BigUint(256), Dictionary.Values.Cell());
+            nextAddress = parseNextResolverRecord(
+                dict.get(toCategory(Category.DNS_CATEGORY_NEXT_RESOLVER))?.beginParse()!
+            )!;
+        }
         if (!nextAddress) return null;
         if (oneStep) {
             if (category === Category.DNS_CATEGORY_NEXT_RESOLVER) {
@@ -248,7 +292,7 @@ const dnsResolveImpl = async (
                 nextAddress,
                 rawDomainBytes.slice(Number(resultLen) / 8),
                 category,
-                false,
+                false
             );
         }
     }
@@ -257,7 +301,8 @@ const dnsResolveImpl = async (
 export class DnsContractsDeployer {
     MasterCode: Cell | null = null;
 
-    constructor() {}
+    constructor() {
+    }
 
     async prepare() {
         this.MasterCode = await compile('DnsResolver');
@@ -265,7 +310,7 @@ export class DnsContractsDeployer {
 
     async deploy(
         sender: SandboxContract<any>,
-        masterAddress: Address,
+        masterAddress: Address
     ): Promise<{
         address: Address;
         transactions: BlockchainTransaction[];
@@ -278,7 +323,7 @@ export class DnsContractsDeployer {
             .endCell();
         const to = contractAddress(0, {
             code,
-            data,
+            data
         });
         const { transactions } = await sender.send({
             value: toNano('0.5'),
@@ -286,9 +331,9 @@ export class DnsContractsDeployer {
             bounce: false,
             init: {
                 code,
-                data,
+                data
             },
-            body: beginCell().storeUint(0x123, 32).storeStringTail('Init!').endCell(),
+            body: beginCell().storeUint(0x123, 32).storeStringTail('Init!').endCell()
         });
         return { address: to, transactions };
     }

@@ -1,6 +1,6 @@
 import '@ton/test-utils';
 import { SocialMedia, deployMaster, sha256, createDomainAndClaimOwnership } from './_helpers';
-import { DnsContractsDeployer, DnsResolver } from '../wrappers/DnsResolver';
+import { Category, DnsContractsDeployer, DnsResolver } from '../wrappers/DnsResolver';
 import { printTransactionFees } from '@ton/sandbox';
 import { beginCell, toNano } from '@ton/core';
 
@@ -44,8 +44,12 @@ describe('Dns', () => {
             const { userId } = await ac.getData();
             const accountAddress = await resolver.getWalletAddress(`id${userId}.ntt`);
             expect(accountAddress).toEqualAddress(ac.address);
+            const accountAddress2 = await resolver.getAll(`id${userId}.ntt`);
+            expect(accountAddress2.get(Category.DNS_CATEGORY_WALLET)).toEqualAddress(ac.address);
             const ownerAddress = await resolver.getWalletAddress(`owner.id${userId}.ntt`);
+            const ownerAddress2 = await resolver.getAll(`owner.id${userId}.ntt`);
             expect(ownerAddress).toEqualAddress(data.userWallets[i].address);
+            expect(ownerAddress2.get(Category.DNS_CATEGORY_WALLET)).toEqualAddress(data.userWallets[i].address);
         }
     });
     it('should resolve domain.ntt', async () => {

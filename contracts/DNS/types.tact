@@ -80,7 +80,7 @@ extends inline fun startsWithDomain(self: Slice): Bool{
 
 inline fun dnsResolveResult(prefix: Int, dict: map<Int as uint256, Cell>, category: Int): DNSResolveResult{
 
-    let recordDef = dict.get(sha256("dns_next_resolver"));
+    let recordDef = dict.get(sha256("next_resolver"));
     if category == 0 {
         if( recordDef != null){
             if(dict.get(sha256("wallet")) == null){

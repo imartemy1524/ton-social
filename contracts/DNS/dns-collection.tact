@@ -7,7 +7,7 @@ trait DnsCollection with DNSResolverMy{
     abstract fun getMasterContract(id: Int): Address;
     //original domain could be smthng like "profile.user-nickname.net.ton
     //subdomain - \0user-nickname\0maybesomethingelse\0
-    //category - sha256("wallet") || sha256("site") || sha256("storage") || sha256("dns_next_resolver")
+    //category - sha256("wallet") || sha256("site") || sha256("storage") || sha256("next_resolver")
     override fun doResolveDNS(subdomainFull: Slice, category: Int): DNSResolveResult {
         let maped: map<Int as uint256, Cell> = emptyMap();
         let prefix = 0;
@@ -32,13 +32,12 @@ trait DnsCollection with DNSResolverMy{
                 prefix = 0;
                 let ID = subdomain.stringToInt();
                 let master = self.getMasterContract(ID);
-                dump(master.toString());
-                maped.set(sha256("dns_next_resolver"), dnsResolveNext(master));
+                maped.set(sha256("next_resolver"), dnsResolveNext(master));
             }
             else if(subdomain.startsWithMaster()){
                 subdomain.skipBits(48);
                 prefix = 48;
-                maped.set(sha256("dns_next_resolver"), dnsResolveNext(self.getMasterContract((1 << 64) - 1)));
+                maped.set(sha256("next_resolver"), dnsResolveNext(self.getMasterContract((1 << 64) - 1)));
 
             }
             //starts with "domain" - reference to self
@@ -50,7 +49,7 @@ trait DnsCollection with DNSResolverMy{
             else{
                 let nextAddr = self.at(subdomain.hash());
                 let resolvedDomain = dnsResolveNext(nextAddr);
-                maped.set(sha256("dns_next_resolver"), resolvedDomain);
+                maped.set(sha256("next_resolver"), resolvedDomain);
             }
         }
 

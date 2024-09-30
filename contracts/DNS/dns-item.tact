@@ -22,7 +22,7 @@ trait DnsItem with DNSResolverMy, Masterable{
     }
     //original domain could be smthng like "profile.user-nickname.net.ton
     //subdomain - maybesomethingelse\0
-    //category - sha256("wallet") || sha256("site") || sha256("storage") || sha256("dns_next_resolver")
+    //category - sha256("wallet") || sha256("site") || sha256("storage") || sha256("next_resolver")
     override fun doResolveDNS(subdomainOld: Slice, category: Int): DNSResolveResult {
         require(self.isInitialized(), "Not initialized");
         let dict: map<Int as uint256, Cell> = emptyMap();
@@ -30,7 +30,7 @@ trait DnsItem with DNSResolverMy, Masterable{
         // Self-domain resolving - no subdomain found (someone enters ".neto.ton" or "neto.ton")
         if (subdomainOld.empty()) {
             if(self.owner != null && self.linked){
-                dict.set(sha256("dns_next_resolver"), dnsResolveNext(self.owner!!));
+                dict.set(sha256("next_resolver"), dnsResolveNext(self.owner!!));
             }
             dict.set(sha256("site"), dnsResolveNext(self.master));
 
@@ -45,7 +45,7 @@ trait DnsItem with DNSResolverMy, Masterable{
             }
             else if(self.owner != null && self.linked){
                 prefix = 0;
-                dict.set(sha256("dns_next_resolver"), dnsResolveNext(self.owner!!));
+                dict.set(sha256("next_resolver"), dnsResolveNext(self.owner!!));
             }
 
         }

@@ -21,7 +21,7 @@ trait DnsMaster with DNSResolverMy, UserPerformable, Ownable{
             subdomain.skipBits(16);
             let idNumber = subdomain.stringToInt();
             let address = self.userContractAddress(idNumber);
-            maped.set(sha256("dns_next_resolver"), dnsResolveNext(address));
+            maped.set(sha256("next_resolver"), dnsResolveNext(address));
         }
         //starts with "owner"
         else if(subdomain.startsWithOwner() && subdomain.bits() == 5*8){
