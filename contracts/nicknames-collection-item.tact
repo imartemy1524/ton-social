@@ -49,14 +49,14 @@ contract NicknamesCollectionItem with DnsItem, DnsNftItem, NftAuctionable{
 
     get fun data(): DomainData{
         return DomainData{
-        auction: AuctionData{
-        lastBid: self.lastBid,
-        endDate: self.auctionEndDate
-        },
-        owner: self.owner,
-        master: self.master,
-        linked: self.linked,
-        nickname: self.nickname
+            auction: AuctionData{
+                lastBid: self.lastBid,
+                endDate: self.auctionEndDate
+            },
+            owner: self.owner,
+            master: self.master,
+            linked: self.linked,
+            nickname: self.nickname
         };
     }
 

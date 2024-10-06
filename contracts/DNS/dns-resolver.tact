@@ -15,7 +15,7 @@ trait DNSResolverMy {
 
         // Resolve
         let res: DNSResolveResult = self.doResolveDNS(subdomain, category);
-        let prefixAns =  res.prefix == 0 && delta == 8 && subdomain.bits() == 0 && self.validRedirectRecord(res.record) ? 0 : (res.prefix + delta);
+        let prefixAns = (res.prefix + delta);
         return DNSResolveResult{prefix: prefixAns, record: res.record};
     }
 
@@ -23,7 +23,4 @@ trait DNSResolverMy {
         return DNSResolveResult{prefix: subdomain.bits(), record: null};
     }
 
-    inline fun validRedirectRecord(record: Cell?): Bool{
-        return record != null && (record!!.beginParse().preloadUint(16) == 0xba93);
-    }
 }

@@ -473,7 +473,7 @@ export async function createDomainAndClaimOwnership(
                 nickname: domain,
             },
         );
-        // printTransactionFees(transactions);
+        printTransactionFees(transactions);
     }
     expect(await account.getData().then((e) => e.nickname)).toBe(domain);
 }

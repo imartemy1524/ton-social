@@ -21,8 +21,7 @@ trait DnsItem with DNSResolverMy, Masterable{
         require( self.owner != null && sender() == self.owner!!, "Invalid sender");
     }
     //original domain could be smthng like "profile.user-nickname.net.ton
-    //subdomain - maybesomethingelse\0
-    //category - sha256("wallet") || sha256("site") || sha256("storage") || sha256("dns_next_resolver")
+    //subdomain - "profile\0" or "" if no subdomain
     override fun doResolveDNS(subdomainOld: Slice, category: Int): DNSResolveResult {
         require(self.isInitialized(), "Not initialized");
         let dict: map<Int as uint256, Cell> = emptyMap();
@@ -30,11 +29,11 @@ trait DnsItem with DNSResolverMy, Masterable{
         // Self-domain resolving - no subdomain found (someone enters ".neto.ton" or "neto.ton")
         if (subdomainOld.empty()) {
             if(self.owner != null && self.linked){
-                dict.set(sha256("dns_next_resolver"), dnsResolveNext(self.owner!!));
+                dict.set(sha256("wallet"), dnsResolveWallet(self.owner!!));
             }
 
         }
-        else{
+        else {
             // remove subdomain from the slice (neto\user-nickname\0....) -> (user-nickname\0....)
             let subdomain = dnsExtractTopDomain(subdomainOld);
             //equals to "domain" - reference to this NFT contract

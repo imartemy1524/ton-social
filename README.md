@@ -38,6 +38,7 @@ Now, what **account** can do?
 - [x] Users can navigate through ton DNS:
   - [x] `neto.ton` -> Master smart contract
   - [x] `master.neto.ton` -> Nicknames collection contract
+    - [x] `owner.master.neto.ton` -> Owner of master contract
   - [x] `id123.neto.ton` -> `id123` account
     - [x] `owner.id123.neto.ton` -> `id123` account's owner
   - [x] `pavel-durov.neto.ton` -> Account in netoton network

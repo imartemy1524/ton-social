@@ -6,9 +6,10 @@ import { Dictionary, toNano } from '@ton/core';
 import { NetworkProvider } from '@ton/blueprint';
 import { User, UserCreatePost } from "../wrappers/User"
 import { Subscription } from '../build/Master/tact_Subscription';
+import { MasterAddress } from './___config';
 
 export async function run(provider: NetworkProvider){
-    const master = provider.open(await Master.fromInit());
+    const master = provider.open(Master.fromAddress(MasterAddress));
     const user = provider.open(User.fromAddress(await master.getUser(1n)));
     const userTo = provider.open(User.fromAddress(await master.getUser(2n)));
     const {subscriptionsData} = await userTo.getData();

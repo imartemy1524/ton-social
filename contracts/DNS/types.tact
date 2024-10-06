@@ -78,18 +78,20 @@ extends inline fun startsWithDomain(self: Slice): Bool{
 }
 
 
-fun dnsResolveResult(prefix: Int, dict: map<Int as uint256, Cell>, category: Int): DNSResolveResult{
+inline fun dnsResolveResult(prefix: Int, dict: map<Int as uint256, Cell>, category: Int): DNSResolveResult{
 
-    let recordDef: Cell? = dict.get(sha256("dns_next_resolver"));
+    let record: Cell? = dict.get(sha256("dns_next_resolver"));
     //no redirect record found - return requested or default record
-    if recordDef == null {
+    if record == null {
         if category == 0 {
-            return DNSResolveResult{prefix, record: dict.asCell()};
+            record = dict.asCell();
         }
-        return DNSResolveResult{prefix, record: dict.get(category)};
+        else{
+            record = dict.get(category);
+        }
     }
 
-    return DNSResolveResult{prefix, record: recordDef};
+    return DNSResolveResult{prefix, record};
 }
 
 

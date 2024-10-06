@@ -1,5 +1,5 @@
 import { Address } from '@ton/core';
 
 
-export const MasterAddress: Address = Address.parse('EQCbhKxueRffRAFHs3UH6L45gADLjwAxCc-JFYVZ3tA4KelK');
-export const CollectionAddress: Address = Address.parse('EQAeUPxocQqi_R6e6K-d9nKI4bBzpp4DE4YXMDLXmAX4ZT_s')
+export const MasterAddress: Address = Address.parse('EQBPwEkAqmwUP61s4y-8nWyLT1Dk7fwgwGSE4hc_qKzPDl88');
+export const CollectionAddress: Address = Address.parse('EQDe7_s5_Ju71StRE5y0qbNUDIpYAB3ZOG5hvhRKhpR0W-xz')
