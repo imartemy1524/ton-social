@@ -5,6 +5,7 @@ import { beginCell, Builder, Cell, Dictionary, DictionaryKey, Slice, toNano } fr
 import { sha256_sync } from '@ton/crypto';
 import { readFile, writeFile } from 'node:fs/promises';
 import { createWriteStream, write } from 'node:fs';
+import { printTransactionFees } from '@ton/sandbox';
 
 describe('UserNft', () => {
     let data: SocialMedia;
@@ -94,4 +95,23 @@ describe('UserNft', () => {
         //ownership should be transfered
         expect(newOwner).toEqualAddress(newOwnerAfterTransfer!);
     });
+
+    it('should avatar be valid', async ()=>{
+        const nft = data.userAccounts[0]!;
+
+        const dataIT = await nft.getData();
+        expect(dataIT.avatar).toBeFalsy();
+        const {transactions} = await nft.send(
+            data.userWallets[0].getSender(),
+            {
+                value: toNano('0.1'),
+            },
+            {
+                $$type: 'ChangeAvatar',
+                avatar: 'https://test.com/abdolbai.com',
+            },
+        );
+        const {avatar: avatarAfter} = await nft.getData();
+        expect(avatarAfter).toBe('https://test.com/abdolbai.com');
+    })
 });

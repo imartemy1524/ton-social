@@ -12,6 +12,7 @@ import "./DNS/dns-user.tact";
 import "./DNS/dns-item.tact";
 import "./DNS/nickname-item-findable.tact";
 import "./nft/DNS/dns-nft-item.tact";
+import "./user/avatar-changer.tact";
 import "./nicknames-collection-item.tact";
 //system messages
 message InitUserInternal{
@@ -33,6 +34,7 @@ struct UserData{
     receivedAchievements: Int;
     subscriptionsData: UserSubscriptionsData;
     nickname: String?;
+    avatar: String?;
 }
 
 
@@ -41,7 +43,7 @@ struct UserData{
 const NullAddress: Address = address("UQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJKZ");
 
 
-contract User with Excessable, BlockableByMaster, PostCommunicator, CommentCommunicator, LikeAdderCommunicator, NftItem, SubscriptionCommunicator, DnsUser{
+contract User with Excessable, BlockableByMaster, PostCommunicator, CommentCommunicator, LikeAdderCommunicator, NftItem, SubscriptionCommunicator, DnsUser, AvatarChanger{
     override const storageReserve: Int = ton("0.03");
 
     nickname: String? = null;
@@ -79,6 +81,7 @@ contract User with Excessable, BlockableByMaster, PostCommunicator, CommentCommu
         self.registerDate = now();
         self.achievementMinterAddress = m.achievementAddress;
         self.profitAddress = m.profitAddress;
+
         self.excess(m.excessTo, beginString().concat(self.userId.toString()).concat(" initialized").toString());
     }
 
@@ -92,7 +95,8 @@ contract User with Excessable, BlockableByMaster, PostCommunicator, CommentCommu
             likesCount: self.likesCount,
             receivedAchievements: self.receivedAchievements,
             subscriptionsData: self.subscriptionsData,
-            nickname: self.nickname
+            nickname: self.nickname!=null?self.nickname:"",
+            avatar: self.avatar != null ? self.avatar: ""
         };
     }
 
