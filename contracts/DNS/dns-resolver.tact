@@ -7,7 +7,7 @@ trait DNSResolverMy {
         let delta: Int = 0;
         if (subdomain.preloadUint(8) == 0) {
             subdomain.loadUint(8); // Skip first byte
-            delta = delta + 8;
+            delta = 8;
         }
 
         // Checks correctness
@@ -15,7 +15,7 @@ trait DNSResolverMy {
 
         // Resolve
         let res: DNSResolveResult = self.doResolveDNS(subdomain, category);
-        let prefixAns =  res.prefix == 0 && delta == 8 && self.validRedirectRecord(res.record) ? 0 : (res.prefix + delta);
+        let prefixAns =  res.prefix == 0 && delta == 8 && subdomain.bits() == 0 && self.validRedirectRecord(res.record) ? 0 : (res.prefix + delta);
         return DNSResolveResult{prefix: prefixAns, record: res.record};
     }
 

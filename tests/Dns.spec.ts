@@ -78,6 +78,10 @@ describe('Dns', () => {
         const domain = 'master.ntt';
         const address = await resolver.getWalletAddress(domain);
         expect(address).toEqualAddress(data.master.address);
+        console.log(data.nicknamesMaster.address.toString(), "nicknames master address");
+        console.log(data.master.address.toString(), "master address");
+        const address2 = await resolver.getAll(domain);
+        expect(address2.get(Category.DNS_CATEGORY_WALLET)).toEqualAddress(data.master.address);
     });
     it('should resolve owner.master.ntt', async () => {
         const domain = 'owner.master.ntt';

@@ -2,6 +2,8 @@ import "./nft-structs.tact";
 import "./metadata.tact";
 import "../utils/json.tact";
 
+
+    @interface("org.tact-lang.contract.nft.v0")
 trait NftItem with Masterable, Ownable, IUser, Blockable{
     const ComputeFee: Int = ton("0.011");
     blocked: Bool;
@@ -64,7 +66,7 @@ trait NftItem with Masterable, Ownable, IUser, Blockable{
         return value - (storageFee + self.ComputeFee);
     }
     // getter
-    get fun get_nft_data(): GetNftData {
+        get fun get_nft_data(): GetNftData {
         return GetNftData{
             is_initialized: self.owner != NullAddress,
             index: self.userId,

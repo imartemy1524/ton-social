@@ -22,16 +22,18 @@ trait DnsUser with IUser, DNSResolverMy, NicknameItemFindable, Ownable, Excessab
         if(subdomainFull.empty()){
             dict.set(sha256("wallet"), dnsResolveWallet(myAddress()));
         }
-        else{
-            skip = subdomainFull.bits();
+        else {
             let subdomain = dnsExtractTopDomain(subdomainFull);
+            skip = subdomain.bits();
             //starts with "owner"
             if(subdomain.startsWithOwner() && subdomain.bits() == 5*8){
                 dict.set(sha256("wallet"), dnsResolveWallet(self.owner));
+                skip += 8;
             }
             if(subdomain.startsWithDomain() && subdomain.bits() == 6*8 && self.nickname != null){
                 let address = contractAddress(self.nickNameContractAt(self.nickname!!));
                 dict.set(sha256("wallet"), dnsResolveWallet(address));
+                skip += 8;
             }
             //TODO: add post-id, subscription-id, etc.
         }

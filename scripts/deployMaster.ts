@@ -4,9 +4,12 @@ import { NetworkProvider } from '@ton/blueprint';
 import { NicknamesCollection } from '../wrappers/NicknamesCollection';
 
 export async function run(provider: NetworkProvider) {
-    const collection = provider.open(await NicknamesCollection.fromInit(provider.sender().address!, 12345n));
+    const collection = provider.open(await NicknamesCollection.fromInit(provider.sender().address!, 12347n));
 
     const master = provider.open(await Master.fromInit(provider.sender().address!, collection.address!, 0n));
+    console.log(`Collection deployed at ${collection.address}`);
+    console.log(`Master deployed at ${master.address}`);
+
     let startUserId: bigint = 0n;
     if (await provider.isContractDeployed(collection.address)) {
         const { masters, size } = await collection.getMasters();
@@ -32,7 +35,8 @@ export async function run(provider: NetworkProvider) {
             },
         );
     }
-    console.log(`Collection deployed at ${collection.address}`);
+
+    await new Promise(r=>setTimeout(r, 10000));
     await master.send(
         provider.sender(),
         {
@@ -43,7 +47,6 @@ export async function run(provider: NetworkProvider) {
             queryId: 0n,
         },
     );
-    console.log(`Master deployed at ${master.address}`);
 
     await provider.waitForDeploy(master.address, 100);
     // run methods on `master`

@@ -11,7 +11,7 @@ TON DNS is a decentralized domain name system on TON blockchain. It allows to "r
 -  Wallet addresses (category=`sha256("wallet")`)
 -  Websites, hosted either in [ADNL network](https://docs.ton.org/learn/networking/adnl) OR in [TON Storage](https://blog.ton.org/ton-storage) (category=`sha256("site")`)
 -  Ton Storage object (category=`sha256("storage")`)
--  Redirects (category=`sha256("next_resolver")`) - to "redirect" the request to another smart contract (for example, one can build subdomains this way, by "cutting" parts of the domain by ".", and "redirecting" resolve request to other smart contracts)
+-  Redirects (category=`sha256("dns_next_resolver")`) - to "redirect" the request to another smart contract (for example, one can build subdomains this way, by "cutting" parts of the domain by ".", and "redirecting" resolve request to other smart contracts)
 
 ## How does resolving works?
 
@@ -44,7 +44,7 @@ Suppose, that one wants to resolve domain `telegram.pavel-durov.ton`.
 
 3. Calls `dnsresolve(subdomain, ???)`  function of the contract `N`. 
     
-    - If contract supports "redirecting" this request to another smart contract (by returning redirect request on `dnsresolve(subdomain, sha256("next_resolver"))`), then:
+    - If contract supports "redirecting" this request to another smart contract (by returning redirect request on `dnsresolve(subdomain, sha256("dns_next_resolver"))`), then:
         1. machine-readable domain is being "cut" by `first returned integer` (in bits). 
             
             **For example**, if one resolves `\0ton\0pavel-durov\0telegram\0` at the [root smart contract](https://tonviewer.com/Ef_lZ1T4NCb2mwkme9h2rJfESCE0W34ma9lWp7-_uY3zXDvq?section=code), it would return `4 * 8` as `first returned integer` (in bits).
@@ -63,16 +63,16 @@ P.S. To get all supported categories, call `dnsresolve(subdomain, 0)` - it would
 
 ### Example for `telegram.pavel-durov.ton` domain (trying to get WEBSITE)
 
-1. **Request** to root smart contract (`dnsresolve("\0pavel-durov\0telegram\0", sha256("next_resolver"))"`) from [blockchain config #4](https://tonviewer.com/config#4).
+1. **Request** to root smart contract (`dnsresolve("\0pavel-durov\0telegram\0", sha256("dns_next_resolver"))"`) from [blockchain config #4](https://tonviewer.com/config#4).
 2. It crops `.ton` part (by returning `4*8` in first parameter) - domain being croped to `\0pavel-durov\0telegram\0` and redirected to [root TON DNS smart contract](https://tonviewer.com/EQC3dNlesgVD8YbAazcauIrXBPfiVhMMr5YYk2in0Mtsz0Bz?section=code)
-3. **Request** to [root TON DNS smart contract](https://tonviewer.com/EQC3dNlesgVD8YbAazcauIrXBPfiVhMMr5YYk2in0Mtsz0Bz?section=code) (`dnsresolve("\0pavel-durov\0telegram\0", sha256("next_resolver"))`,
+3. **Request** to [root TON DNS smart contract](https://tonviewer.com/EQC3dNlesgVD8YbAazcauIrXBPfiVhMMr5YYk2in0Mtsz0Bz?section=code) (`dnsresolve("\0pavel-durov\0telegram\0", sha256("dns_next_resolver"))`,
 4. It crops `.pavel-durov` part (by returning length of `.pavel-durov` string * 8) domain being croped to `\0telegram\0` - and redirected to [pavel-durov TON DNS smart contract](https://tonviewer.com/Ef_lZ1T4NCb2mwkme9h2rJfESCE0W34ma9lWp7-_uY3zXDvq) (this smart contract is unique for each domain name like `pavel-durov`, `igor-durov` etc.).
 5. _Suppose_, that the owner of this contract created redirect for subdomains, by setting `Subdomains` field in [TON DNS](https://dns.ton.org/#pavel-durov)
-6. **Request** to [pavel-durov TON DNS smart contract](https://tonviewer.com/Ef_lZ1T4NCb2mwkme9h2rJfESCE0W34ma9lWp7-_uY3zXDvq) (`dnsresolve("\0telegram\0", sha256("next_resolver"))`).
+6. **Request** to [pavel-durov TON DNS smart contract](https://tonviewer.com/Ef_lZ1T4NCb2mwkme9h2rJfESCE0W34ma9lWp7-_uY3zXDvq) (`dnsresolve("\0telegram\0", sha256("dns_next_resolver"))`).
 7. It crops `.` part  and redirects request with `telegram\0` to configured `Subdomains` address above.
 8. **Request** to `Subdomains` smart contract, which is (supposed) configured above. Now there are 2 possible ways to resolve this domain:
     1. `Subdomains` smart contract resolves `telegram` domain **DIRECTLY** to some website(`dnsresolve("telegram\0", sha256("site"))`) in either TON Storage using [ton storage return format](#ton-storage) or in [ADNL ton network](https://docs.ton.org/learn/networking/adnl) using [ADNL format](#adnl-format) by responding on `dnsresolve("telegram\0", sha256("site"))` request.
-    2. `Subdomains` smart contract redirects resolving this domain name to another smart contract (`dnsresolve("telegram\0", sha256("next_resolver"))`), by cropping (for example) `telegram` part and returning `\0` to another smart contract.
+    2. `Subdomains` smart contract redirects resolving this domain name to another smart contract (`dnsresolve("telegram\0", sha256("dns_next_resolver"))`), by cropping (for example) `telegram` part and returning `\0` to another smart contract.
         
         1. Then the same process repeats for resolved contract (`dnsresolve("\0", sha256("site"))`), passing `\0` as input
         2. This contract returns response either in [ton storage return format](#ton-storage) or [ADNL format](#adnl-format) `(0, responseCell)`
@@ -91,7 +91,7 @@ P.S. To get all supported categories, call `dnsresolve(subdomain, 0)` - it would
 ## Response formats
 
 ### Redirect request to another contract 
-Returns for `category=sha256("next_resolver")`
+Returns for `category=sha256("dns_next_resolver")`
 ```tact
 fun dnsResolveNext(address: Address): Cell {
     return beginCell()
